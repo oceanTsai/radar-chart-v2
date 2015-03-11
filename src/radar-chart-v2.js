@@ -208,7 +208,8 @@
 			
 		};
 		
-		base.drawVerticalAxis = function(axixGroup, axisInfo){
+		base.drawVerticalAxis = function(axixGroup){
+			var axixPoints = [];
 			var className = '';
 			switch(model.options.verticalStyle){
 				case AXIS_TYPE.DASH:
@@ -218,25 +219,18 @@
 					className = 'vertical-axis';
 					break;
 			}
-			for(var index=0, count=axisInfo.length ; index < count ; index++){
-				var axis = axisInfo[index];
-				axixGroup.append('line')
-						 .attr('class', className)
-					 	 .attr('x1', axis.outSide.x).attr('y1', axis.outSide.y)
-					 	 .attr('x2', axis.inner.x).attr('y2', axis.inner.y);
-			}
-		};
-		
-		base.verticalAxisPoint = function(){
-			var result = [];
 			var opt = model.options;
 			for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
 				var radians = opt.onePiece * index; 	//當前縱軸的弧度
 				var outSidePoint = this.point(model.verticalLength(), radians);
 				var innerPoint = this.point(opt.centerRadius,radians);
-				result.push({inner : innerPoint , outSide : outSidePoint});
+				axixGroup.append('line')
+						 .attr('class', className)
+					 	 .attr('x1', outSidePoint.x).attr('y1', outSidePoint.y)
+					 	 .attr('x2', innerPoint.x).attr('y2', innerPoint.y);
+				axixPoints.push({inner : innerPoint , outSide : outSidePoint});
 			}
-			return result;
+			return axixPoints;
 		};
 		
 		/* 繪製垂直相關的網絡 */
@@ -245,8 +239,8 @@
 				var opt = model.options;
 				var axixGroup = stage.append('g').attr('class', 'vertical-web');
 				var titleGroup = stage.append('g').attr('class', 'title-group');
-				var axisInfo = this.verticalAxisPoint();
-				this.drawVerticalAxis(axixGroup, axisInfo);
+				//var axisInfo = this.verticalAxisPoint();
+				this.drawVerticalAxis(axixGroup);
 				//var titleList = stage.datum();
 				/*
 				var axisCount = model.options.pointCount;
