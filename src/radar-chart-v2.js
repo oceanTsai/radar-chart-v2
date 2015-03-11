@@ -1,4 +1,18 @@
 (function(document, d3){
+	//---------------------------
+	// 常數
+	//---------------------------
+	var ARC = 2 * Math.PI;					//弧
+	var CENTER_TYPE = {						//中心顯示的樣式列舉
+				NORMAL : 'normal',			//不留空
+				DOUNT : 'dount',			//園
+				POLYGON : 'polygon'			//多邊形
+	};
+	var AXIS_TYPE = {
+				DASH : 'dash',
+				LINE : 'line'
+	};
+	
 	//--------------------------
 	// tools
 	//--------------------------
@@ -11,14 +25,8 @@
 	//  資料模組 : 處理資料邏輯
 	//-------------------------- 
 	var ChartModel = function(source, opt){
-		var base = ChartModel.prototype,	//ChartModel的prototype,用來定義共通的public method.
-			ARC = 2 * Math.PI,				//弧
-			CENTER_TYPE = {					//中心顯示的樣式列舉
-				NORMAL : 'normal',			//不留空
-				DOUNT : 'dount',			//園
-				POLYGON : 'polygon'			//多邊形
-			},
-			data,
+		var base = ChartModel.prototype,		//ChartModel的prototype,用來定義共通的public method.
+			data,								//
 			defaultOption = {
 				viewPort : '100%, 100%',		//svg長寬。 width height
 				viewBox : '0,0,300,300',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
@@ -26,19 +34,22 @@
 				//vertical
 				verticalZoom : 0.8,				//縱軸縮放值
 				verticalAxisLength : 0,			//縱軸長
+				verticalStyle : AXIS_TYPE.DASH,	//
 				maxValue : 100,					//縱軸上的最大值
 				minValue : 0,					//縱軸上的最小值
 				scale : 10,						//縱軸刻度數
 				//
 				//
-				dx : 20,						//繪製參考點水平偏移量
-				dy : 20,						//繪製參考點垂直偏移量
+				dx : 0,							//繪製參考點水平偏移量
+				dy : 0,							//繪製參考點垂直偏移量
 				layer : 5,						//橫網層數
 				centerType : CENTER_TYPE.DOUNT,	//雷達網中心要呈現的樣式
 				centerRadius : 20,				//中心點半徑
+				//
+				pointCount : 0,
+				onePiece : 0
 			};
 		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
-		
 		/*
 		 * 一個點的弧度值
 		 */
@@ -111,6 +122,11 @@
 			};
 		};
 		
+		/* 取得垂直軸長 */
+		base.verticalLength = function(){
+			return this.options.verticalAxisLength * this.options.verticalZoom;
+		};
+		
 		/* 
 		 * 銷毀 
 		 */
@@ -127,11 +143,18 @@
 			defaultOption.verticalAxisLength = minSideLength;
 		};
 		
+		base.initOffset = function(){
+			var viewBox = this.getViewBoxValue();
+			defaultOption.dx = viewBox.width / 2;
+			defaultOption.dy = viewBox.height / 2;
+		};
+		
 		/*
 		 * 初始化
 		 */
 		base.init = function(source, opt){
 			this.initAxisLength();
+			this.initOffset();
 			this.mixOptions(opt);
 			this.setData(source);
 		};
@@ -186,9 +209,60 @@
 			
 		};
 		
+		base.drawVerticalAxis = function(axixGroup, axisInfo){
+			var className = '';
+			switch(model.options.verticalStyle){
+				case AXIS_TYPE.DASH:
+					className = 'vertical-axis dash';
+					break;
+				case AXIS_TYPE.LINE:
+					className = 'vertical-axis';
+					break;
+			}
+			for(var index=0, count=axisInfo.length ; index < count ; index++){
+				var axis = axisInfo[index];
+				axixGroup.append('line')
+						 .attr('class', className)
+					 	 .attr('x1', axis.outSide.x).attr('y1', axis.outSide.y)
+					 	 .attr('x2', axis.inner.x).attr('y2', axis.inner.y);
+			}
+		};
+		
+		base.verticalAxisPoint = function(){
+			var result = [];
+			var opt = model.options;
+			for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
+				var radians = opt.onePiece * index; 	//當前縱軸的弧度
+				var outSidePoint = this.point(model.verticalLength(), radians);
+				var innerPoint = this.point(opt.centerRadius,radians);
+				result.push({inner : innerPoint , outSide : outSidePoint});
+			}
+			return result;
+		};
+		
+		/* 繪製垂直相關的網絡 */
 		base.drawVerticalWeb = function(stage){
-			console.log(this);
-			console.log(stage);
+			if(show=true){
+				var opt = model.options;
+				var axixGroup = stage.append('g').attr('class', 'vertical-web');
+				var titleGroup = stage.append('g').attr('class', 'title-group');
+				var axisInfo = this.verticalAxisPoint();
+				this.drawVerticalAxis(axixGroup, axisInfo);
+				//var titleList = stage.datum();
+				/*
+				var axisCount = model.options.pointCount;
+				for(var index=0; index < axisCount ; index++){
+					var radians = opt.onePiece * index; 	//當前縱軸的弧度
+					var outSidePoint = this.point(model.verticalLength(), radians);
+					var innerPoint = this.point(opt.centerRadius,radians);
+					//var p1 = self.getPoint(verticalLength, radians  , minLength);
+					//var p2 = self.getPoint(opt.centerRadius, radians  , minLength);
+					//var title = titleList[index].title;
+					//stage.call(self.drawVerticalAxis, p1, p2, axixGroup, self);
+					//stage.call(self.drawItemTitle, p1, p2, title, titleGroup, minLength, opt, self);
+				}
+				*/
+			}
 		};
 		
 		/* 繪製雷達的網 */
@@ -203,11 +277,12 @@
 			var opt = model.options;
 			//rander svg
 			var stage = d3.selectAll(elements).append("svg");
-				stage.attr("width", viewPort.width)
-				   .attr("height", viewPort.height)
-				   .attr("viewBox",opt.viewBox)
-				   .attr("preserveAspectRatio", opt.preserveAspectRatio)
-				   .datum(model.getData());
+				stage.attr('class', 'radar')
+					 .attr("width", viewPort.width)
+					 .attr("height", viewPort.height)
+					 .attr("viewBox",opt.viewBox)
+					 .attr("preserveAspectRatio", opt.preserveAspectRatio)
+					 .datum(model.getData());
 			return stage;
 		};
 		

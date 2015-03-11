@@ -1,0 +1,63 @@
+/**/
+.dash{
+    stroke-dasharray : 5 5;
+}
+
+.radar .horizontal-axis{
+    stroke : grey;
+    stroke-width: 1;
+}
+.radar .vertical-axis{
+    stroke : grey;
+    stroke-width: 1;
+}
+/**area*/
+.radar .area-box{}
+.radar .area-group{}
+.radar .area {
+    stroke-width: 2;
+    fill-opacity: 0.5;
+    transition : all 1s
+}
+.radar .areaHover{
+    fill-opacity: 0.8;
+}
+.radar .areaFade{
+    fill-opacity:0.1;
+}
+/**mark*/
+.radar .mark-group{
+}
+.radar .mark{
+    transition : all 1s ease-out;
+}
+.radar .mark:hover{
+    stroke : grey;
+    stroke-width : 2;
+}
+/**title*/
+.radar .title-group{
+}
+.radar .item-title{
+}
+/**info panel*/
+.radar .infoPanel-group{
+}
+.radar .infoPanel{
+    transition : all 1s ease-out;
+    stroke-width:1;             /**border size*/
+    stroke:rgb(124,181,236);    /**border color*/
+    fill:rgba(249,249,249,0.85);/**background*/
+    opacity: 0;                 /**dufault is hide*/
+}
+
+.radar .panel-title{
+    transition : all 1s ease-out;
+    opacity: 0;
+}
+.radar .panel-text{
+    
+}
+.radar .panel-show{
+    opacity: 1;
+}
