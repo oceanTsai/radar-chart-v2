@@ -69,7 +69,11 @@
 				centerRadius : 25,				//中心點半徑
 				//system auto calculate (系統會自動計算的欄位)
 				pointCount : 0,
-				onePiece : 0
+				onePiece : 0,
+				//假設值
+				//title
+				surmiseFontGap: 3,				//假設的font gap
+				verticalAxisTitleGap : 6
 			};
 		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
 		this.vericalAxisPoints=[];
@@ -450,7 +454,32 @@
 		
 		/* 繪製垂直軸上標題 */
 		base.drawVerticalTitle = function(titleGroup, outSidePoint, title){
+			var opt = model.options;
+			var x = Math.ceil(outSidePoint.x);
+			var y = Math.ceil(outSidePoint.y);
+			var text = titleGroup.append('text').attr('class', 'item-title').text(title); 
+			var fontSize = text.style("font-size").replace('pt','').replace('px','')  | 0;
+			var gapTotal =  opt.surmiseFontGap * (title.length - 1);
+			var offsetW  = (fontSize * title.length + gapTotal) ;  //
+			var offsetH  = fontSize / 2 | 0;
+
+			//x is rigth
+			if(x > opt.dx){
+				text.attr('x', x + opt.verticalAxisTitleGap );
+			}else if(x < opt.dx){
+				text.attr('x', x - opt.verticalAxisTitleGap - offsetW);
+			}else{
+				//x is center
+				text.attr('x', x - offsetW / 2 );
+			}
 			
+			if(y > opt.dy){
+				text.attr('y', y + offsetH + opt.verticalAxisTitleGap + 5);
+			}else if(y < opt.dy){
+				text.attr('y', y - offsetH - opt.verticalAxisTitleGap + -5);
+			}else{
+				text.attr('y', y);
+			}
 		};
 		
 		
