@@ -38,7 +38,7 @@
 				preserveAspectRatio : "none",	//svg zoom mode
 				//vertical
 				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
-				verticalZoom : 0.8,				//縱軸縮放值
+				verticalZoom : 0.76,				//縱軸縮放值
 				verticalAxisLength : 0,			//縱軸長
 				verticalStyle : AXIS_TYPE.DASH,	//
 				maxValue : 100,					//縱軸上的最大值
@@ -66,7 +66,7 @@
 				dy : 0,							//繪製參考點垂直偏移量
 				layer : 5,						//橫網層數
 				centerType : CENTER_TYPE.DOUNT,	//雷達網中心要呈現的樣式
-				centerRadius : 20,				//中心點半徑
+				centerRadius : 25,				//中心點半徑
 				//system auto calculate (系統會自動計算的欄位)
 				pointCount : 0,
 				onePiece : 0
@@ -212,7 +212,6 @@
 		 * 銷毀 
 		 */
 		base.destroy = function(){
-			//console.log('model destroy');
 		};
 		
 		/*
@@ -270,6 +269,20 @@
 		base.prepareParam = function(){
 		};
 		
+		/* area mouse over handle */
+		base.areaMouseOver = function(data){
+			//set all polygon class
+			d3.select(this.parentNode).selectAll('.area-group').select('.area').classed('areaFade', true);
+			//set current polygon class
+			d3.select(this).select('.area').classed('areaFade', false).classed('areaHover', true);
+		};
+		
+		/* area mouse out handle */
+		base.areaMouseOut = function(data){
+			d3.select(this.parentNode).selectAll('.area-group').select('.area').classed('areaFade', false);
+			d3.select(this).select('.area').classed('areaHover', false);
+		};
+				
 		/* 繪製標文字資訊 */
 		base.drawInfo = function(stage){
 			
@@ -309,12 +322,16 @@
 		
 		/* 繪製area折線*/
 		base.drawAreaPolygon = function(areaBox, ploygonPoint, color){
-			areaBox.append('g').attr('class', 'area-group')
-				   .append('polygon')
-				   .attr('class', 'area')
-				   .attr('points',ploygonPoint)
-				   .style('fill', color)
-				   .style('stroke', color);
+			var areaGroup = areaBox.append('g');
+			areaGroup.attr('class', 'area-group')
+					 .append('polygon')
+					 .attr('class', 'area')
+					 .attr('points',ploygonPoint)
+					 .style('fill', color)
+					 .style('stroke', color);
+			//event listener
+			areaGroup.on('mouseover', this.areaMouseOver)
+					 .on('mouseout' , this.areaMouseOut);
 		};
 		
 		/* 繪製點所形成的區塊 */
@@ -345,36 +362,6 @@
 					this.drawMarkPoint(areaBox, markPoints, color);
 				}
 			}
-			/*
-			var areaCount = svg.datum().length;
-			for(var outIndex=0; outIndex < areaCount; outIndex++ ){
-				pointList.pointPoints[outIndex] = [];
-				var areaData = svg.datum()[outIndex];
-				var points='';
-				for(var index=0, valueCount=areaData.length ; index < valueCount ; index++){
-					var val = areaData[index].value;
-					var radius = (minLength*opt.verticalZoom  )/ (opt.maxValue - opt.minValue) * val + centerRadius;
-					var point = self.getPoint(radius, onePiece * index , minLength );
-					points += point.x + ' ' +  point.y + ',';
-					pointList.pointPoints[outIndex].push(point);
-				}
-				points = points.substr(0, points.length-1);
-				pointList.areaPoints.push(points);
-			}
-			var areaBox = svg.append('g').attr('class', 'area-box');
-			if(show){	
-				for(var i=0, l=areaPoints.length; i < l ; i++){
-					var areaGrup = areaBox.append('g').attr('class', 'area-group');				
-					var area = areaGrup.append('polygon');
-						area.attr('class', 'area')
-							.attr('points',areaPoints[i])
-							.style('fill', opt.color(i))
-							.style('stroke', opt.color(i));
-						areaGrup.on('mouseover', self.areaMouseOver);
-						areaGrup.on('mouseout' , self.areaMouseOut);
-				}
-			}
-			*/
 		};
 		
 		/* 繪製刻度表 */
@@ -546,7 +533,7 @@
 			canBeIteration= function(list){
 				return (list.hasOwnProperty('length') && list.length > 0);
 			};
-			
+		//d3 js reference
 		base.d3 = d3;
 		
 		base.upPlane = function(element, plane){
