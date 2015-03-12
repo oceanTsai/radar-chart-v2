@@ -28,6 +28,7 @@
 		var base = ChartModel.prototype,		//ChartModel的prototype,用來定義共通的public method.
 			data,								//
 			defaultOption = {
+				//stage
 				viewPort : '100%, 100%',		//svg長寬。 width height
 				viewBox : '0,0,600,600',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
 				preserveAspectRatio : "none",	//svg zoom mode
@@ -49,16 +50,18 @@
 				scaleFontColor : 'black',		//刻度文字顏色
 				scaleFontSize : 14,				//刻度文字大小
 				scaleUnit : '%',				//單位顯示
-				//
+				//area
+				visibleArea : true,				//是否呈現各點的區塊連接
+				areaColor : '#FFEB3B, #673AB7 , #4CAF50',
+				//public prpoerty
 				dx : 0,							//繪製參考點水平偏移量
 				dy : 0,							//繪製參考點垂直偏移量
 				layer : 5,						//橫網層數
 				centerType : CENTER_TYPE.DOUNT,	//雷達網中心要呈現的樣式
 				centerRadius : 20,				//中心點半徑
-				//
+				//system auto calculate (系統會自動計算的欄位)
 				pointCount : 0,
 				onePiece : 0
-				//
 			};
 		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
 		this.vericalAxisPoints=[];
@@ -187,11 +190,21 @@
 			return (this.options.maxValue - this.options.minValue) / this.options.scale;
 		};
 		
+		/* 取得 area 顏色*/
+		base.getAreaColor = function(index){
+			var color = 'grey';
+			var areaColorList = clearWhitespace(this.options.areaColor).split(',');
+			if(areaColorList && areaColorList.length > 0){
+				color = areaColorList[ index % areaColorList.length ];
+			}
+			return color;
+		};
+		
 		/* 
 		 * 銷毀 
 		 */
 		base.destroy = function(){
-			console.log('model destroy');
+			//console.log('model destroy');
 		};
 		
 		/*
@@ -261,8 +274,72 @@
 			
 		};
 		
+		/* 繪製area折線*/
+		base.drawAreaPolygon = function(areaBox, ploygonPoint, color){
+			areaBox.append('g').attr('class', 'area-group')
+				   .append('polygon')
+				   .attr('class', 'area')
+				   .attr('points',ploygonPoint)
+				   .style('fill', color)
+				   .style('stroke', color);
+		};
+		
 		/* 繪製點所形成的區塊 */
 		base.drawArea = function(stage){
+			var opt = model.options;
+			if(opt.visibleArea){
+				var areaData = model.getData();
+				var areaBox = stage.append('g').attr('class', 'area-box');
+				var areaPoints = [];
+				//out loop hanlde area
+				//inner loop hanlde point
+				for(var areaIndex=0, areaCount=areaData.length; areaIndex < areaCount ; areaIndex++){
+					var currentData = areaData[areaIndex];
+					areaPoints.length = 0; //clear array
+					for(var pointIndex=0,pointCount=model.options.pointCount ; pointIndex < pointCount; pointIndex++){
+						//cal point
+						var pointData = currentData[pointIndex];
+						var radians = opt.onePiece * pointIndex; 	//當前縱軸的弧度
+						var radius = model.verticalLength() / (opt.maxValue - opt.minValue) * pointData.value + opt.centerRadius;
+						var point = this.point(radius, radians);
+						areaPoints.push(point.x + ',' + point.y); //ploygon format
+						//console.log(point);
+						
+					}
+					var color = model.getAreaColor(areaIndex);
+					this.drawAreaPolygon(areaBox, areaPoints.join(' '), color);
+				}
+			}
+			/*
+			var areaCount = svg.datum().length;
+			for(var outIndex=0; outIndex < areaCount; outIndex++ ){
+				pointList.pointPoints[outIndex] = [];
+				var areaData = svg.datum()[outIndex];
+				var points='';
+				for(var index=0, valueCount=areaData.length ; index < valueCount ; index++){
+					var val = areaData[index].value;
+					var radius = (minLength*opt.verticalZoom  )/ (opt.maxValue - opt.minValue) * val + centerRadius;
+					var point = self.getPoint(radius, onePiece * index , minLength );
+					points += point.x + ' ' +  point.y + ',';
+					pointList.pointPoints[outIndex].push(point);
+				}
+				points = points.substr(0, points.length-1);
+				pointList.areaPoints.push(points);
+			}
+			var areaBox = svg.append('g').attr('class', 'area-box');
+			if(show){	
+				for(var i=0, l=areaPoints.length; i < l ; i++){
+					var areaGrup = areaBox.append('g').attr('class', 'area-group');				
+					var area = areaGrup.append('polygon');
+						area.attr('class', 'area')
+							.attr('points',areaPoints[i])
+							.style('fill', opt.color(i))
+							.style('stroke', opt.color(i));
+						areaGrup.on('mouseover', self.areaMouseOver);
+						areaGrup.on('mouseout' , self.areaMouseOut);
+				}
+			}
+			*/
 		};
 		
 		/* 繪製刻度表 */
@@ -271,7 +348,6 @@
 			if(opt.visibleScale){
 				var outSidePoint = model.vericalAxisPoints[0].outSide;
 				var scalaGroup = stage.append('g').attr('class','scale-group');
-				var className = '';
 				var gap = model.scaleGap();
 				for(var index=0; index <= opt.scale ; index++){
 					var radius = index * gap + opt.centerRadius;
@@ -343,7 +419,7 @@
 				//console.log(stage.datum());
 				for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
 					var radians = opt.onePiece * index; 	//當前縱軸的弧度
-					var outSidePoint = this.point(model.verticalLength()+opt.centerRadius, radians);
+					var outSidePoint = this.point(model.verticalLength() + opt.centerRadius, radians);
 					var innerPoint = this.point(opt.centerRadius,radians);
 					var title = model.verticalTitle(index);
 					this.drawVerticalAxis(axixGroup, className, outSidePoint, innerPoint);
@@ -382,6 +458,7 @@
 				this.prepareParam();
 				var stage = this.drawStage(elements);
 				this.drawWeb(stage);
+				this.drawArea(stage);
 			}
 		};
 		
