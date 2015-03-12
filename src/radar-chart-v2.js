@@ -29,7 +29,7 @@
 			data,								//
 			defaultOption = {
 				viewPort : '100%, 100%',		//svg長寬。 width height
-				viewBox : '0,0,300,300',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
+				viewBox : '0,0,600,600',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
 				preserveAspectRatio : "none",	//svg zoom mode
 				//vertical
 				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
@@ -44,6 +44,11 @@
 				//scale
 				scale : 10,						//縱軸刻度數
 				visibleScale : true,			//是否要呈現刻度
+				scaleFontDx : 3,				//刻度文字水平偏移
+				scaleFontDy : 0,				//刻度文字垂直偏移
+				scaleFontColor : 'black',		//刻度文字顏色
+				scaleFontSize : 14,				//刻度文字大小
+				scaleUnit : '%',				//單位顯示
 				//
 				dx : 0,							//繪製參考點水平偏移量
 				dy : 0,							//繪製參考點垂直偏移量
@@ -155,7 +160,6 @@
 		
 		/* 取得橫軸網之間的距離 */
 		base.horizontalAxisGap = function(){
-			console.log(this.verticalLength() );
 			return this.verticalLength() / this.options.layer;
 		};
 		
@@ -173,6 +177,16 @@
 			return className;
 		};
 
+		/* 取得刻度之間的距離 */
+		base.scaleGap = function(){
+			return this.verticalLength() / this.options.scale;
+		};
+		
+		/* 每一刻度基礎參考數值*/
+		base.scaleRefValue = function(){
+			return (this.options.maxValue - this.options.minValue) / this.options.scale;
+		};
+		
 		/* 
 		 * 銷毀 
 		 */
@@ -256,22 +270,19 @@
 			var opt = model.options;
 			if(opt.visibleScale){
 				var outSidePoint = model.vericalAxisPoints[0].outSide;
-				/* 
-				var p1 = self.getPoint(verticalLength, 0  , minLength);
-				var p2 = self.getPoint(opt.centerRadius, 0  , minLength);
-				var basicLength = (p2.y - p1.y) / opt.levels;
-				var basicValue = (opt.maxValue - opt.minValue) / opt.levels;
-				var g = svg.append('g').attr('class','scale-group');
-				for(var j=0 , count = opt.levels ; j <= count ; j++){
-					var textY =  p2.y - j * basicLength;
-					g.append('text')
-					 .attr('x', p1.x)
-					 .attr('y', textY)
-					 .attr('fill', opt.scaleColor)
-					 .attr('font-size', opt.scaleFontSize + 'px')
-					 .text(j * basicValue + opt.scaleText);
+				var scalaGroup = stage.append('g').attr('class','scale-group');
+				var className = '';
+				var gap = model.scaleGap();
+				for(var index=0; index <= opt.scale ; index++){
+					var radius = index * gap + opt.centerRadius;
+						var point = this.point(radius, opt.onePiece * 0);
+						scalaGroup.append('text')
+								  .attr('x', point.x + opt.scaleFontDx)
+								  .attr('y', point.y + opt.scaleFontDy)
+								  .attr('fill', opt.scaleFontColor)
+								  .attr('font-size', opt.scaleFontSize + 'px')
+								  .text( (index * model.scaleRefValue()) + opt.scaleUnit);
 				}
-				*/
 			}
 		};
 		
@@ -297,6 +308,7 @@
 					for(var index=0, axisCount = model.options.pointCount ; index < axisCount ; index++){
 						var p0 = this.point(radius, opt.onePiece * index);
 						var p1 = this.point(radius, opt.onePiece * (index+1));
+						//if (index == 0) console.log(p0);
 						this.drawHorizontalAxis(axixGroup, p0, p1, className);
 					}
 				}
