@@ -32,12 +32,18 @@
 				viewBox : '0,0,300,300',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
 				preserveAspectRatio : "none",	//svg zoom mode
 				//vertical
+				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
 				verticalZoom : 0.8,				//縱軸縮放值
 				verticalAxisLength : 0,			//縱軸長
 				verticalStyle : AXIS_TYPE.DASH,	//
 				maxValue : 100,					//縱軸上的最大值
 				minValue : 0,					//縱軸上的最小值
+				//horizontal
+				visibleHorizontalWeb : true,	//是否呈現雷達圖橫網
+				horizontalStyle : AXIS_TYPE.DASH,
+				//scale
 				scale : 10,						//縱軸刻度數
+				visibleScale : true,			//是否要呈現刻度
 				//
 				dx : 0,							//繪製參考點水平偏移量
 				dy : 0,							//繪製參考點垂直偏移量
@@ -47,8 +53,10 @@
 				//
 				pointCount : 0,
 				onePiece : 0
+				//
 			};
 		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
+		this.vericalAxisPoints=[];
 		/*
 		 * 一個點的弧度值
 		 */
@@ -126,6 +134,45 @@
 			return this.options.verticalAxisLength * this.options.verticalZoom;
 		};
 		
+		/* 取得垂直軸 class name*/
+		base.verticalClass = function(){
+			var className='';
+			switch(this.options.verticalStyle){
+				case AXIS_TYPE.DASH:
+					className = 'vertical-axis dash';
+					break;
+				case AXIS_TYPE.LINE:
+					className = 'vertical-axis';
+					break;
+			}
+			return className;
+		};
+		
+		/* 依索引取回垂直軸上的title*/
+		base.verticalTitle = function(index){
+			return data[0][index].title;
+		};
+		
+		/* 取得橫軸網之間的距離 */
+		base.horizontalAxisGap = function(){
+			console.log(this.verticalLength() );
+			return this.verticalLength() / this.options.layer;
+		};
+		
+		/* 取得橫軸 className*/
+		base.horizontalClass = function(){
+			var className='';
+			switch(this.options.horizontalStyle){
+				case AXIS_TYPE.DASH:
+					className = 'horizontal-axis dash';
+					break;
+				case AXIS_TYPE.LINE:
+					className = 'horizontal-axis';
+					break;
+			}
+			return className;
+		};
+
 		/* 
 		 * 銷毀 
 		 */
@@ -204,57 +251,93 @@
 		base.drawArea = function(stage){
 		};
 		
+		/* 繪製刻度表 */
+		base.drawScaleLine = function(stage){
+			var opt = model.options;
+			if(opt.visibleScale){
+				var outSidePoint = model.vericalAxisPoints[0].outSide;
+				/* 
+				var p1 = self.getPoint(verticalLength, 0  , minLength);
+				var p2 = self.getPoint(opt.centerRadius, 0  , minLength);
+				var basicLength = (p2.y - p1.y) / opt.levels;
+				var basicValue = (opt.maxValue - opt.minValue) / opt.levels;
+				var g = svg.append('g').attr('class','scale-group');
+				for(var j=0 , count = opt.levels ; j <= count ; j++){
+					var textY =  p2.y - j * basicLength;
+					g.append('text')
+					 .attr('x', p1.x)
+					 .attr('y', textY)
+					 .attr('fill', opt.scaleColor)
+					 .attr('font-size', opt.scaleFontSize + 'px')
+					 .text(j * basicValue + opt.scaleText);
+				}
+				*/
+			}
+		};
+		
+		/* 繪製水平軸*/
+		base.drawHorizontalAxis = function(axixGroup, p0, p1, className){
+			axixGroup.append('line')
+					 .attr('class', className)
+					 .attr('x1', p0.x)
+					 .attr('y1', p0.y)
+					 .attr('x2', p1.x)
+					 .attr('y2', p1.y);
+		};
+		
+		/* 繪製水平相關的網絡 */
 		base.drawHorizontalWeb = function(stage){
+			var opt = model.options;
+			if(opt.visibleHorizontalWeb){
+				var axixGroup = stage.append('g').attr('class', 'horizontal-web');
+				var className = model.horizontalClass();
+				var gap = model.horizontalAxisGap();
+				for(var outIndex=0; outIndex <= opt.layer ; outIndex++){
+					var radius = outIndex * gap + opt.centerRadius;
+					for(var index=0, axisCount = model.options.pointCount ; index < axisCount ; index++){
+						var p0 = this.point(radius, opt.onePiece * index);
+						var p1 = this.point(radius, opt.onePiece * (index+1));
+						this.drawHorizontalAxis(axixGroup, p0, p1, className);
+					}
+				}
+			}
+		};
+		
+		/* 繪製垂直軸上標題 */
+		base.drawVerticalTitle = function(titleGroup, outSidePoint, title){
 			
 		};
 		
-		base.drawVerticalAxis = function(axixGroup){
-			var axixPoints = [];
-			var className = '';
-			switch(model.options.verticalStyle){
-				case AXIS_TYPE.DASH:
-					className = 'vertical-axis dash';
-					break;
-				case AXIS_TYPE.LINE:
-					className = 'vertical-axis';
-					break;
-			}
-			var opt = model.options;
-			for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
-				var radians = opt.onePiece * index; 	//當前縱軸的弧度
-				var outSidePoint = this.point(model.verticalLength(), radians);
-				var innerPoint = this.point(opt.centerRadius,radians);
+		
+		
+		/* 繪製垂直軸*/
+		base.drawVerticalAxis = function(axixGroup, className, outSidePoint, innerPoint){			
 				axixGroup.append('line')
 						 .attr('class', className)
-					 	 .attr('x1', outSidePoint.x).attr('y1', outSidePoint.y)
-					 	 .attr('x2', innerPoint.x).attr('y2', innerPoint.y);
-				axixPoints.push({inner : innerPoint , outSide : outSidePoint});
-			}
-			return axixPoints;
+					 	 .attr('x1', outSidePoint.x)
+					 	 .attr('y1', outSidePoint.y)
+					 	 .attr('x2', innerPoint.x)
+					 	 .attr('y2', innerPoint.y);		
 		};
 		
 		/* 繪製垂直相關的網絡 */
 		base.drawVerticalWeb = function(stage){
-			if(show=true){
-				var opt = model.options;
+			var opt = model.options;
+			if(opt.visibleVerticalWeb){
+				model.vericalAxisPoints.length = 0;	//clear array
 				var axixGroup = stage.append('g').attr('class', 'vertical-web');
-				var titleGroup = stage.append('g').attr('class', 'title-group');
-				//var axisInfo = this.verticalAxisPoint();
-				this.drawVerticalAxis(axixGroup);
-				//var titleList = stage.datum();
-				/*
-				var axisCount = model.options.pointCount;
-				for(var index=0; index < axisCount ; index++){
+				var titleGroup = stage.append('g').attr('class', 'title-group');				
+				var className = model.verticalClass();
+				//console.log(stage.datum());
+				for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
 					var radians = opt.onePiece * index; 	//當前縱軸的弧度
-					var outSidePoint = this.point(model.verticalLength(), radians);
+					var outSidePoint = this.point(model.verticalLength()+opt.centerRadius, radians);
 					var innerPoint = this.point(opt.centerRadius,radians);
-					//var p1 = self.getPoint(verticalLength, radians  , minLength);
-					//var p2 = self.getPoint(opt.centerRadius, radians  , minLength);
-					//var title = titleList[index].title;
-					//stage.call(self.drawVerticalAxis, p1, p2, axixGroup, self);
-					//stage.call(self.drawItemTitle, p1, p2, title, titleGroup, minLength, opt, self);
+					var title = model.verticalTitle(index);
+					this.drawVerticalAxis(axixGroup, className, outSidePoint, innerPoint);
+					this.drawVerticalTitle(titleGroup, outSidePoint, title);
+					model.vericalAxisPoints.push({inner : innerPoint , outSide : outSidePoint});
 				}
-				*/
 			}
 		};
 		
@@ -262,6 +345,7 @@
 		base.drawWeb = function(stage){
 			this.drawVerticalWeb(stage);
 			this.drawHorizontalWeb(stage);
+			this.drawScaleLine(stage);
 		};
 		
 		/* 繪製場景 */
