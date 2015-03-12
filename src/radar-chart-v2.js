@@ -1,4 +1,4 @@
-(function(document, d3){
+(function(document, d3, $){
 	//---------------------------
 	// 常數
 	//---------------------------
@@ -269,18 +269,31 @@
 		base.prepareParam = function(){
 		};
 		
-		/* area mouse over handle */
-		base.areaMouseOver = function(data){
-			//set all polygon class
-			d3.select(this.parentNode).selectAll('.area-group').select('.area').classed('areaFade', true);
-			//set current polygon class
-			d3.select(this).select('.area').classed('areaFade', false).classed('areaHover', true);
+		/* 上移一層 */
+		base.upPlane = function(areaBox, areaContainer){
+			
 		};
 		
-		/* area mouse out handle */
-		base.areaMouseOut = function(data){
-			d3.select(this.parentNode).selectAll('.area-group').select('.area').classed('areaFade', false);
-			d3.select(this).select('.area').classed('areaHover', false);
+		/* 下移一層 */
+		base.downPlane = function(areaBox, areaContainer){
+			
+		};
+		
+		/* 指定圖層插入 */
+		base.insertPlaneAt = function(areaBox, areaContainer, index){
+			
+		};
+		
+		/* 圖層插入dom最前頭 (放在最底層)*/
+		base.insertFirst = function(areaBox, areaContainer){
+			$(areaContainer).remove();
+			$(areaBox).prepend(areaContainer);
+		};
+		
+		/* 圖層插入dom最後頭 (放在圖層的最上層)*/
+		base.insertLast = function(areaBox, areaContainer){
+			$(areaContainer).remove();
+			$(areaBox).append(areaContainer);
 		};
 				
 		/* 繪製標文字資訊 */
@@ -299,8 +312,8 @@
 					.attr('cx', point.x)
 					.attr('cy', point.y)
 					.attr('r', opt.markRadius)
-					.style('fill', color)
-					.datum(point);				//bind data
+					.style('fill', color);
+					//.datum(point);				//bind data
 					//mark[0][0].self = self;	//bind self
 					//mark.on('mouseover', self.markMouseOver);
 					//mark.on('mouseout' , self.markMouseOut);
@@ -313,16 +326,36 @@
 			return mark;
 		};
 		/* 繪製標記點 */
-		base.drawMarkPoint = function(areaBox, markPoints, color ){
-			var markGulp = areaBox.append('g').attr('class', 'mark-group');
+		base.drawMarkPoint = function(areaContainer, markPoints, color ){
+			var markGulp = areaContainer.append('g').attr('class', 'mark-group');
 			for(var index=0, count=markPoints.length ; index < count ; index++ ){
 				this.appendMark(markGulp, markPoints[index], color);
 			}
 		};
 		
+		/* area mouse over handle */
+		base.areaMouseOver = function(data){
+			//set all polygon class
+			d3.select(this.parentNode.parentNode).selectAll('.area-group').select('.area').classed('areaFade', true);
+			//set current polygon class
+			d3.select(this).select('.area').classed('areaFade', false).classed('areaHover', true);
+		};
+		
+		/* area mouse out handle */
+		base.areaMouseOut = function(data){
+			d3.select(this.parentNode.parentNode).selectAll('.area-group').select('.area').classed('areaFade', false);
+			d3.select(this).select('.area').classed('areaHover', false);
+		};
+		
+		base.areaMouseDown = function(data){
+			var areaBox = d3.select(this.parentNode.parentNode);
+			var areaContainer = d3.select(this.parentNode);
+			base.insertLast(areaBox[0][0], areaContainer[0][0]);
+		};
+		
 		/* 繪製area折線*/
-		base.drawAreaPolygon = function(areaBox, ploygonPoint, color){
-			var areaGroup = areaBox.append('g');
+		base.drawAreaPolygon = function(areaContainer, ploygonPoint, color){
+			var areaGroup = areaContainer.append('g');
 			areaGroup.attr('class', 'area-group')
 					 .append('polygon')
 					 .attr('class', 'area')
@@ -331,7 +364,8 @@
 					 .style('stroke', color);
 			//event listener
 			areaGroup.on('mouseover', this.areaMouseOver)
-					 .on('mouseout' , this.areaMouseOut);
+					 .on('mouseout' , this.areaMouseOut)
+					 .on('click', this.areaMouseDown);
 		};
 		
 		/* 繪製點所形成的區塊 */
@@ -346,6 +380,7 @@
 				//inner loop hanlde point
 				for(var areaIndex=0, areaCount=areaData.length; areaIndex < areaCount ; areaIndex++){
 					var currentData = areaData[areaIndex];
+					var areaContainer = areaBox.append('g').attr('class', 'area-container');
 					areaPoints.length = 0; //clear array
 					markPoints.length = 0; //clear array
 					for(var pointIndex=0,pointCount=model.options.pointCount ; pointIndex < pointCount; pointIndex++){
@@ -358,8 +393,8 @@
 						markPoints.push(point);					
 					}
 					var color = model.getAreaColor(areaIndex);
-					this.drawAreaPolygon(areaBox, areaPoints.join(' '), color);
-					this.drawMarkPoint(areaBox, markPoints, color);
+					this.drawAreaPolygon(areaContainer, areaPoints.join(' '), color);
+					this.drawMarkPoint(areaContainer, markPoints, color);
 				}
 			}
 		};
@@ -536,11 +571,28 @@
 		//d3 js reference
 		base.d3 = d3;
 		
-		base.upPlane = function(element, plane){
+		/* 上移一層 */
+		base.upPlane = function(display){
 			
 		};
 		
-		base.downPlane = function(element, plane){
+		/* 下移一層 */
+		base.downPlane = function(display){
+			
+		};
+		
+		/* 指定圖層插入 */
+		base.insertPlaneAt = function(display, index){
+			
+		};
+		
+		/* 圖層插入最前頭 */
+		base.insertFirst = function(display){
+			
+		};
+		
+		/* 圖層插入最後頭 */
+		base.insertLast = function(display){
 			
 		};
 		
@@ -585,4 +637,4 @@
 	if(typeof(module)!= "undefined"){
 		module.exports = new RaderPainter(d3);
 	}
-}).call(this, document, d3);
+}).call(this, document, d3, $);
