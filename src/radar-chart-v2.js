@@ -1,4 +1,9 @@
 (function(document, d3, $){
+	/* author : ocean Tsai
+	 * email : contest.start@gmail.com
+	 * licenses : MIT
+	 * /
+	
 	//---------------------------
 	// 常數
 	//---------------------------
