@@ -12,6 +12,10 @@
 				DASH : 'dash',
 				LINE : 'line'
 	};
+	var MARK_TYPE = {
+			CIRCLE : 'circle',
+			RECT : 'rect'
+	};
 	
 	//--------------------------
 	// tools
@@ -53,6 +57,10 @@
 				//area
 				visibleArea : true,				//是否呈現各點的區塊連接
 				areaColor : '#FFEB3B, #673AB7 , #4CAF50',
+				//mark
+				visibleMark : true,				//是否呈現標記點
+				markType : MARK_TYPE.CIRCLE,	//預設標記點樣式
+				markRadius : 7,					//標記半徑
 				//public prpoerty
 				dx : 0,							//繪製參考點水平偏移量
 				dy : 0,							//繪製參考點垂直偏移量
@@ -260,8 +268,6 @@
 		
 		/* 準備所需參數值 */
 		base.prepareParam = function(){
-			var data = model.getData();
-			//var onePiece = opt.arc / total;	
 		};
 		
 		/* 繪製標文字資訊 */
@@ -269,9 +275,36 @@
 			
 		};
 		
+		/* */
+		base.appendMark = function(markGulp, point, color){
+			var mark;
+			var opt = model.options;
+			//圓形
+			if(opt.markType ===  MARK_TYPE.CIRCLE){
+				mark = markGulp.append(opt.markType);
+				mark.attr('class', 'mark')
+					.attr('cx', point.x)
+					.attr('cy', point.y)
+					.attr('r', opt.markRadius)
+					.style('fill', color)
+					.datum(point);				//bind data
+					//mark[0][0].self = self;	//bind self
+					//mark.on('mouseover', self.markMouseOver);
+					//mark.on('mouseout' , self.markMouseOut);
+			}
+			//矩形
+			if(model.options.markType === MARK_TYPE.MARK_TYPE){
+				mark = markGulp.append(opt.markType);
+				mark.attr('class', 'mark');
+			}
+			return mark;
+		};
 		/* 繪製標記點 */
-		base.drawMarkPoint = function(stage){
-			
+		base.drawMarkPoint = function(areaBox, markPoints, color ){
+			var markGulp = areaBox.append('g').attr('class', 'mark-group');
+			for(var index=0, count=markPoints.length ; index < count ; index++ ){
+				this.appendMark(markGulp, markPoints[index], color);
+			}
 		};
 		
 		/* 繪製area折線*/
@@ -291,23 +324,25 @@
 				var areaData = model.getData();
 				var areaBox = stage.append('g').attr('class', 'area-box');
 				var areaPoints = [];
+				var markPoints = [];
 				//out loop hanlde area
 				//inner loop hanlde point
 				for(var areaIndex=0, areaCount=areaData.length; areaIndex < areaCount ; areaIndex++){
 					var currentData = areaData[areaIndex];
 					areaPoints.length = 0; //clear array
+					markPoints.length = 0; //clear array
 					for(var pointIndex=0,pointCount=model.options.pointCount ; pointIndex < pointCount; pointIndex++){
 						//cal point
 						var pointData = currentData[pointIndex];
 						var radians = opt.onePiece * pointIndex; 	//當前縱軸的弧度
 						var radius = model.verticalLength() / (opt.maxValue - opt.minValue) * pointData.value + opt.centerRadius;
 						var point = this.point(radius, radians);
-						areaPoints.push(point.x + ',' + point.y); //ploygon format
-						//console.log(point);
-						
+						areaPoints.push(point.x + ',' + point.y); //ploygon format	
+						markPoints.push(point);					
 					}
 					var color = model.getAreaColor(areaIndex);
 					this.drawAreaPolygon(areaBox, areaPoints.join(' '), color);
+					this.drawMarkPoint(areaBox, markPoints, color);
 				}
 			}
 			/*
