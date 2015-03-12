@@ -279,30 +279,33 @@
 		};
 		
 		/* 上移一層 */
-		base.upPlane = function(areaBox, areaContainer){
+		base.nextArea = function(){
 			
 		};
 		
 		/* 下移一層 */
-		base.downPlane = function(areaBox, areaContainer){
+		base.breakArea = function(){
 			
 		};
 		
 		/* 指定圖層插入 */
-		base.insertPlaneAt = function(areaBox, areaContainer, index){
-			
+		base.insertPlaneAt = function(display, index){	
 		};
 		
 		/* 圖層插入dom最前頭 (放在最底層)*/
-		base.insertFirst = function(areaBox, areaContainer){
-			$(areaContainer).remove();
-			$(areaBox).prepend(areaContainer);
+		base.insertFirst = function(display){
+			var childer = $(display);
+			var parent = childer.parent();
+			childer.remove();
+			parent.prepend(childer[0]);
 		};
 		
 		/* 圖層插入dom最後頭 (放在圖層的最上層)*/
-		base.insertLast = function(areaBox, areaContainer){
-			$(areaContainer).remove();
-			$(areaBox).append(areaContainer);
+		base.insertLast = function(display){
+			var childer = $(display);
+			var parent = childer.parent();
+			childer.remove();
+			parent.append(childer[0]);
 		};
 				
 		/* 繪製標文字資訊 */
@@ -357,9 +360,8 @@
 		};
 		
 		base.areaMouseDown = function(data){
-			var areaBox = d3.select(this.parentNode.parentNode);
 			var areaContainer = d3.select(this.parentNode);
-			base.insertLast(areaBox[0][0], areaContainer[0][0]);
+			base.insertLast(areaContainer[0][0]);
 		};
 		
 		/* 繪製area折線*/
@@ -606,28 +608,29 @@
 		base.d3 = d3;
 		
 		/* 上移一層 */
-		base.upPlane = function(display){
-			
+		base.nextArea = function(){
 		};
 		
 		/* 下移一層 */
-		base.downPlane = function(display){
-			
+		base.breakArea = function(){
 		};
 		
 		/* 指定圖層插入 */
 		base.insertPlaneAt = function(display, index){
-			
 		};
 		
-		/* 圖層插入最前頭 */
+		/* 圖層插入最前頭 
+		 * display : HTML Element
+		 */
 		base.insertFirst = function(display){
-			
+			pan.insertFirst(display);
 		};
 		
-		/* 圖層插入最後頭 */
+		/* 圖層插入最後頭 
+		 * display : HTML Element
+		 */
 		base.insertLast = function(display){
-			
+			pan.insertLast(display);
 		};
 		
 		/*
