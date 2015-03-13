@@ -631,7 +631,7 @@
 				}
 				return success;
 			},
-			getChartModel = function(){
+			getChartModel = function(identity){
 				var model;
 				if(chartDepot.hasOwnProperty(identity)){
 					model = chartDepot[identity];
@@ -683,13 +683,13 @@
 		};
 		
 		/* 取得 全部 area 顏色*/
-		base.getAllAreaColor = function(){
-			return pan.getAllAreaColor();
+		base.getAllAreaColor = function(identity){
+			return getChartModel(identity).getAllAreaColor();
 		};
 		
 		/* 取得 area 顏色*/
-		base.getAreaColor = function(index){
-			return pan.getAreaColor(index);
+		base.getAreaColor = function(identity, index){
+			return getChartModel(identity).getAreaColor(index);
 		};
 		
 		/*

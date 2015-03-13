@@ -12,31 +12,48 @@
 			margin: 0px 0px;
 			padding : 0px 0px;
 		}
+		
 		div{
 			margin-bottom: 10px;
 		}
+		
+		.btnBox{
+			overflow: hidden;
+		}
+		
 		.container{
 			width: 600px;
 			height:600px;
 			background-color: #eeeeee;
-			
 		}
 		
+		.areaBtn div, .areaBtn button{
+			float : left;
+			width: 100px;
+			height: 25px;
+			margin-left: 10px;
+		}
+
 		
 	</style>
 </head>
 <body>
 	<div class="container" id="top"></div>
-	<div>
-		<button id="oneNext">next</button>
-		<button id="oneBreak">Break</button>
+	<div class='btnBox'>
+		<div class='areaBtn'>
+			<button id="oneNext">next</button>
+			<button id="oneBreak">Break</button>	
+		</div>
 	</div>
 	
 	<div class="container" id="bottom"></div>
-	<div>
-		<button id="twoNext">next</button>
-		<button id="twoBreak">Break</button>
+	<div class='btnBox'>
+		<div class='areaBtn'>
+			<button id="twoNext">next</button>
+			<button id="twoBreak">Break</button>
+		</div>
 	</div>
+	
 	
 	<div id="radarChart"></div>
 
@@ -109,6 +126,15 @@ $('#oneBreak').click(function(){
 	painter.breakArea($('svg')[1]);
 });
 
+//
+$('.areaBtn').each(function(index, element){
+	for(var i=0, len=data.length ; i < len ; i++){
+		var container = $(element).append('<div></div>');
+		var color = painter.getAreaColor('.container',i);
+		container.find('div').last().css({'background': color});
+	}	
+});
+	
 
 </script>
 </html>
