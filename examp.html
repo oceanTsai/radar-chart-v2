@@ -126,12 +126,21 @@ $('#twoBreak').click(function(){
 	painter.breakArea($('svg')[1]);
 });
 
+
+
+var colorBlockClick = function(){
+	painter.insertLast(this['area']);
+};
 //
 $('.areaBtn').each(function(index, element){
+	var svg = $('svg')[index];
+	var areaList = $(svg).find('.area-box').children();
 	for(var i=0, len=data.length ; i < len ; i++){
 		var container = $(element).append('<div></div>');
 		var color = painter.getAreaColor('.container',i);
-		container.find('div').last().css({'background': color});
+		var colorBlock = container.find('div').last().css({'background': color});
+		colorBlock[0]['area'] = areaList[i];	//bind html element
+		colorBlock.click(colorBlockClick);
 	}	
 });
 	
