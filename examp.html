@@ -12,17 +12,26 @@
 			margin: 0px 0px;
 			padding : 0px 0px;
 		}
+		div{
+			margin-bottom: 10px;
+		}
 		.container{
 			width: 600px;
 			height:600px;
 			background-color: #eeeeee;
-			margin-bottom: 10px;
+			
 		}
+		
+		
 	</style>
 </head>
 <body>
-	<div class="container"></div>
-	<div class="container"></div>
+	<div class="container" id="top"></div>
+	<div><button id="one">next</button></div>
+	
+	<div class="container" id="bottom"></div>
+	<div><button id="two">next</button></div>
+	
 	<div id="radarChart"></div>
 
 </body>
@@ -61,11 +70,29 @@ var data = [
            {title: "生物", value: 57 },
            {title: "公民", value: 23 },
            {title: "地理", value: 48 }
+        ],
+        [
+           {title: "國文", value: 20 }, 
+           {title: "數學", value: 10	}, 
+           {title: "英文", value: 32 },  
+           {title: "歷史", value: 36 },  
+           {title: "物理", value: 22 },
+           {title: "生物", value: 37 },
+           {title: "公民", value: 0 },
+           {title: "地理", value: 99 }
         ]
 ];
 
 var painter = window.RaderPainter;
 var elements = painter.drawChart('.container', data, {});
+
+$('#one').click(function(){
+	painter.nextArea($('svg')[0]);
+});
+
+$('#two').click(function(){
+	painter.nextArea($('svg')[1]);
+});
 
 </script>
 </html>

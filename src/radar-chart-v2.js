@@ -61,7 +61,7 @@
 				scaleUnit : '%',				//單位顯示
 				//area
 				visibleArea : true,				//是否呈現各點的區塊連接
-				areaColor : '#FFEB3B, #673AB7 , #4CAF50',
+				areaColor : '#FFEB3B, #673AB7, #4CAF50, #FF9800, #9C27B0, #3F51B5, #8BC34A, #E91E63, #795548, #009688',
 				//mark
 				visibleMark : true,				//是否呈現標記點
 				markType : MARK_TYPE.CIRCLE,	//預設標記點樣式
@@ -279,8 +279,12 @@
 		};
 		
 		/* 上移一層 */
-		base.nextArea = function(){
-			
+		base.nextArea = function(svg){
+			var areaBox = $(svg).find('.area-box');
+			var areaContainer = areaBox.find('.area-container');
+			var firstNode = areaContainer.first();
+			firstNode.remove();
+			areaBox.append(firstNode);			
 		};
 		
 		/* 下移一層 */
@@ -310,7 +314,56 @@
 				
 		/* 繪製標文字資訊 */
 		base.drawInfo = function(stage){
+		};
+		
+		/* 弱化全部 area 色彩*/
+		var weakenAllAreaColor = function(display){
+			d3.select(display).selectAll('.area-group').select('.area').classed('areaFade', true);
+		};
 			
+		/* 強化單一 area 色彩*/
+		var strengthenAreaColro = function(display){
+			d3.select(display).select('.area').classed('areaFade', false).classed('areaHover', true);
+		};
+		
+		/* 恢復 area 原來色彩 */
+		var restoreAreaColor = function(groupContainer, focusDisplay){
+			d3.select(groupContainer).selectAll('.area-group').select('.area').classed('areaFade', false);
+			d3.select(focusDisplay).select('.area').classed('areaHover', false);
+		};
+		
+		/* 滑鼠滑入 area 時的處理 */
+		base.areaMouseOver = function(data){
+			var areaBox = $(this).parent().parent()[0];
+			weakenAllAreaColor(areaBox);
+			strengthenAreaColro(this);
+		};
+		
+		/* 滑鼠滑出 area 時的處理 */
+		base.areaMouseOut = function(data){
+			var areaBox = $(this).parent().parent()[0];
+			restoreAreaColor(areaBox, this);
+		};
+		
+		/* 滑鼠點擊 area 的處理*/
+		base.areaMouseDown = function(data){
+			var areaContainer = $(this).parent()[0];
+			base.insertLast(areaContainer);
+		};
+		
+		/* 滑鼠滑入 mark時的處理 */
+		base.markMouseOver = function(data){
+			var areaBox = $(this).parent().parent().parent()[0];
+			var areaGroup = $(this).parent().parent().find('.area-group')[0];
+			weakenAllAreaColor(areaBox);
+			strengthenAreaColro(areaGroup);
+		};
+		
+		 /* 滑鼠滑出 mark 時的處理 */
+		base.markMouseOut = function(data){
+			var areaBox = $(this).parent().parent().parent()[0];
+			var areaGroup = $(this).parent().parent().find('.area-group')[0];
+			restoreAreaColor(areaBox, areaGroup);
 		};
 		
 		/* */
@@ -326,9 +379,9 @@
 					.attr('r', opt.markRadius)
 					.style('fill', color);
 					//.datum(point);				//bind data
-					//mark[0][0].self = self;	//bind self
-					//mark.on('mouseover', self.markMouseOver);
-					//mark.on('mouseout' , self.markMouseOut);
+					//mark[0][0].self = self;		//bind self
+				mark.on('mouseover', this.markMouseOver)
+					.on('mouseout' , this.markMouseOut);
 			}
 			//矩形
 			if(model.options.markType === MARK_TYPE.MARK_TYPE){
@@ -345,25 +398,6 @@
 			}
 		};
 		
-		/* area mouse over handle */
-		base.areaMouseOver = function(data){
-			//set all polygon class
-			d3.select(this.parentNode.parentNode).selectAll('.area-group').select('.area').classed('areaFade', true);
-			//set current polygon class
-			d3.select(this).select('.area').classed('areaFade', false).classed('areaHover', true);
-		};
-		
-		/* area mouse out handle */
-		base.areaMouseOut = function(data){
-			d3.select(this.parentNode.parentNode).selectAll('.area-group').select('.area').classed('areaFade', false);
-			d3.select(this).select('.area').classed('areaHover', false);
-		};
-		
-		base.areaMouseDown = function(data){
-			var areaContainer = d3.select(this.parentNode);
-			base.insertLast(areaContainer[0][0]);
-		};
-		
 		/* 繪製area折線*/
 		base.drawAreaPolygon = function(areaContainer, ploygonPoint, color){
 			var areaGroup = areaContainer.append('g');
@@ -376,7 +410,7 @@
 			//event listener
 			areaGroup.on('mouseover', this.areaMouseOver)
 					 .on('mouseout' , this.areaMouseOut)
-					 .on('click', this.areaMouseDown);
+					 .on('mousedown', this.areaMouseDown);
 		};
 		
 		/* 繪製點所形成的區塊 */
@@ -607,12 +641,17 @@
 		//d3 js reference
 		base.d3 = d3;
 		
-		/* 上移一層 */
-		base.nextArea = function(){
+		/* 上移一層
+		 * svg : HTML Element
+		 */
+		base.nextArea = function(svg){
+			pan.nextArea(svg);
 		};
 		
-		/* 下移一層 */
-		base.breakArea = function(){
+		/* 下移一層
+		 * svg : HTML Element
+		 */
+		base.breakArea = function(svg){
 		};
 		
 		/* 指定圖層插入 */
