@@ -27,7 +27,7 @@
 			background-color: #eeeeee;
 		}
 		
-		.areaBtn div, .areaBtn button{
+		.areaBtn div, .areaBtn button, .areaBtn input{
 			float : left;
 			width: 100px;
 			height: 25px;
@@ -41,14 +41,16 @@
 	<div class="container" id="top"></div>
 	<div class='btnBox'>
 		<div class='areaBtn'>
+			<input id="oneSilder" type="range" min="300" max="900" value="600" />
 			<button id="oneNext">next</button>
-			<button id="oneBreak">Break</button>	
+			<button id="oneBreak">Break</button>
 		</div>
 	</div>
 	
 	<div class="container" id="bottom"></div>
 	<div class='btnBox'>
 		<div class='areaBtn'>
+			<input id="twoSilder" type="range" min="300" max="900" value="600" />
 			<button id="twoNext">next</button>
 			<button id="twoBreak">Break</button>
 		</div>
@@ -143,7 +145,16 @@ $('.areaBtn').each(function(index, element){
 		colorBlock.click(colorBlockClick);
 	}	
 });
-	
+
+$('#oneSilder').change(function(){
+	var value = $(this).val()+'px';
+	$('.container').first().width(value).height(value);
+});
+
+$('#twoSilder').change(function(){
+	var value = $(this).val()+'px';
+	$('.container').last().width(value).height(value);
+});
 
 </script>
 </html>
