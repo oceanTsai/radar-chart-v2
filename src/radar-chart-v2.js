@@ -282,14 +282,18 @@
 		base.nextArea = function(svg){
 			var areaBox = $(svg).find('.area-box');
 			var areaContainer = areaBox.find('.area-container');
-			var firstNode = areaContainer.first();
-			firstNode.remove();
-			areaBox.append(firstNode);			
+			var node = areaContainer.first();
+			node.remove();
+			areaBox.append(node);			
 		};
 		
 		/* 下移一層 */
-		base.breakArea = function(){
-			
+		base.breakArea = function(svg){
+			var areaBox = $(svg).find('.area-box');
+			var areaContainer = areaBox.find('.area-container');
+			var node = areaContainer.last();
+			node.remove();
+			areaBox.prepend(node);
 		};
 		
 		/* 指定圖層插入 */
@@ -652,6 +656,7 @@
 		 * svg : HTML Element
 		 */
 		base.breakArea = function(svg){
+			pan.breakArea(svg);
 		};
 		
 		/* 指定圖層插入 */

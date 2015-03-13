@@ -27,10 +27,16 @@
 </head>
 <body>
 	<div class="container" id="top"></div>
-	<div><button id="one">next</button></div>
+	<div>
+		<button id="oneNext">next</button>
+		<button id="oneBreak">Break</button>
+	</div>
 	
 	<div class="container" id="bottom"></div>
-	<div><button id="two">next</button></div>
+	<div>
+		<button id="twoNext">next</button>
+		<button id="twoBreak">Break</button>
+	</div>
 	
 	<div id="radarChart"></div>
 
@@ -86,13 +92,23 @@ var data = [
 var painter = window.RaderPainter;
 var elements = painter.drawChart('.container', data, {});
 
-$('#one').click(function(){
+$('#oneNext').click(function(){
 	painter.nextArea($('svg')[0]);
 });
 
-$('#two').click(function(){
+$('#oneBreak').click(function(){
+	painter.breakArea($('svg')[0]);
+});
+
+
+$('#twoNext').click(function(){
 	painter.nextArea($('svg')[1]);
 });
+
+$('#oneBreak').click(function(){
+	painter.breakArea($('svg')[1]);
+});
+
 
 </script>
 </html>
