@@ -64,3 +64,8 @@
 .radar .panel-show{
     opacity: 1;
 }
+
+.radar .follow-Icon{
+    opacity : 0.8;
+    fill:rgba(33, 150, 243, 0.8);
+}

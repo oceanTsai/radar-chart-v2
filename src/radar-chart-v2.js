@@ -78,7 +78,10 @@
 				//假設值
 				//title
 				surmiseFontGap: 3,				//假設的font gap
-				verticalAxisTitleGap : 6
+				verticalAxisTitleGap : 6,
+				//follow mouse icon
+				visibleFollowIcon : false,		//是否呈現跟隨滑鼠笑果
+				followIcon : ''					//svg path
 			};
 		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
 		this.vericalAxisPoints=[];
@@ -222,6 +225,11 @@
 			return color;
 		};
 		
+		/* 弧度轉角度 */
+		base.angle = function(radian){
+			return radian * 180 / Math.PI;
+		};
+		
 		/* 
 		 * 銷毀 
 		 */
@@ -243,12 +251,31 @@
 			defaultOption.dy = viewBox.height / 2;
 		};
 		
+		base.initFollowIcon = function(){
+			//followIcon
+			var r = defaultOption.centerRadius / 2;
+			var p1 = {
+						x : defaultOption.dx,
+						y : defaultOption.dy - r
+				};
+			var p2 = {
+					x : defaultOption.dx + r,
+					y : defaultOption.dy + r
+			};
+			var p3 = {
+					x : defaultOption.dx - r,
+					y : defaultOption.dy + r
+			};
+			defaultOption.followIcon = 'M ' + p1.x + ' ' + p1.y + ' L ' + p2.x + ' ' + p2.y  + ' L ' + p3.x + ' ' + p3.y + ' Z';
+		};
+		
 		/*
 		 * 初始化
 		 */
 		base.init = function(source, opt){
 			this.initAxisLength();
 			this.initOffset();
+			this.initFollowIcon();
 			this.mixOptions(opt);
 			this.setData(source);
 		};
@@ -320,7 +347,18 @@
 			childer.remove();
 			parent.append(childer[0]);
 		};
-				
+		
+		/* 繪製跟隨滑鼠的 icon */
+		base.drawFollowMouse = function(stage){
+			var opt = model.options;
+			if(opt.visibleFollowIcon){
+				var followMousebox = stage.append('g').attr('class', 'followMouse-box');
+				followMousebox.append('path')
+							  .attr('class', 'follow-Icon')
+							  .attr('d', opt.followIcon);
+			}
+		};
+			
 		/* 繪製標文字資訊 */
 		base.drawInfo = function(stage){
 		};
@@ -387,8 +425,7 @@
 					.attr('cy', point.y)
 					.attr('r', opt.markRadius)
 					.style('fill', color);
-					//.datum(point);				//bind data
-					//mark[0][0].self = self;		//bind self
+					//mark[0][0] = point;
 				mark.on('mouseover', this.markMouseOver)
 					.on('mouseout' , this.markMouseOut);
 			}
@@ -406,7 +443,7 @@
 				this.appendMark(markGulp, markPoints[index], color);
 			}
 		};
-		
+			
 		/* 繪製area折線*/
 		base.drawAreaPolygon = function(areaContainer, ploygonPoint, color){
 			var areaGroup = areaContainer.append('g');
@@ -419,7 +456,7 @@
 			//event listener
 			areaGroup.on('mouseover', this.areaMouseOver)
 					 .on('mouseout' , this.areaMouseOut)
-					 .on('mousedown', this.areaMouseDown);
+					 .on('mousedown', this.areaMouseDown);			
 		};
 		
 		/* 繪製點所形成的區塊 */
@@ -532,8 +569,6 @@
 			}
 		};
 		
-		
-		
 		/* 繪製垂直軸*/
 		base.drawVerticalAxis = function(axixGroup, className, outSidePoint, innerPoint){			
 				axixGroup.append('line')
@@ -595,6 +630,7 @@
 				var stage = this.drawStage(elements);
 				this.drawWeb(stage);
 				this.drawArea(stage);
+				this.drawFollowMouse(stage);
 			}
 		};
 		
@@ -602,7 +638,6 @@
 		base.clearChart = function(elements){
 			d3.selectAll(elements).select('svg').remove();
 		};
-		
 	};
 	
 	// --------------------------
