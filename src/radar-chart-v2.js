@@ -207,6 +207,11 @@
 			return (this.options.maxValue - this.options.minValue) / this.options.scale;
 		};
 		
+		/* 取得 全部 area 顏色*/
+		base.getAllAreaColor = function(){
+			return clearWhitespace(this.options.areaColor).split(',');
+		};
+		
 		/* 取得 area 顏色*/
 		base.getAreaColor = function(index){
 			var color = 'grey';
@@ -675,6 +680,16 @@
 		 */
 		base.insertLast = function(display){
 			pan.insertLast(display);
+		};
+		
+		/* 取得 全部 area 顏色*/
+		base.getAllAreaColor = function(){
+			return pan.getAllAreaColor();
+		};
+		
+		/* 取得 area 顏色*/
+		base.getAreaColor = function(index){
+			return pan.getAreaColor(index);
 		};
 		
 		/*

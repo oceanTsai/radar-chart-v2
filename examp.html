@@ -90,7 +90,7 @@ var data = [
 ];
 
 var painter = window.RaderPainter;
-var elements = painter.drawChart('.container', data, {});
+var elements = painter.drawChart('.container', data, {scaleUnit : ' 分'});
 
 $('#oneNext').click(function(){
 	painter.nextArea($('svg')[0]);

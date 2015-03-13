@@ -31,10 +31,12 @@
 }
 .radar .mark{
     transition : all 1s ease-out;
+    stroke : grey;
+    stroke-width : 1;
 }
 .radar .mark:hover{
     stroke : grey;
-    stroke-width : 2;
+    stroke-width : 3;
 }
 /**title*/
 .radar .title-group{
