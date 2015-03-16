@@ -81,7 +81,17 @@
 				verticalAxisTitleGap : 6,
 				//follow mouse icon
 				visibleFollowIcon : false,		//是否呈現跟隨滑鼠笑果
-				followIcon : ''					//svg path
+				followIcon : '',				//svg path
+				//information panel
+				visibleInfoPanel :true,
+				infoPanelWidth: 70,
+				infoPanelHeight :24,
+				infoPanelRadiusX :5,			//面板的圓角
+				infoPanelRadiusY :5,
+				infoPanelhorizontalGap : 10,
+				infoPanelverticalGap :10,
+				infoLeftPadding : 3,
+				infoTopPadding : 4,
 			};
 		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
 		this.vericalAxisPoints=[];
@@ -358,9 +368,22 @@
 							  .attr('d', opt.followIcon);
 			}
 		};
-			
+		
 		/* 繪製標文字資訊 */
-		base.drawInfo = function(stage){
+		base.drawInfoPanel = function(stage){
+			var opt = model.options;
+			if(opt.visibleInfoPanel){
+				var panelGroup = stage.append('g').attr('class','infoPanel-group');
+		        	panelGroup.append('rect')
+		        			  .attr('class','infoPanel')
+		          			  .attr('width',	opt.infoPanelWidth)
+		          			  .attr('height', opt.infoPanelHeight)
+		          			  .attr('x', 0)
+		          			  .attr('y', 0)
+		          			  .attr('rx', opt.infoPanelRadiusX)
+		          			  .attr('ry', opt.infoPanelRadiusY);
+		          	panelGroup.append('text').attr('class', 'panel-title');
+		      }
 		};
 		
 		/* 弱化全部 area 色彩*/
@@ -398,12 +421,86 @@
 			base.insertLast(areaContainer);
 		};
 		
+		var infoTextContext = function(data){
+			return data.title + ':' + data.value;
+		};
+		
+		var infoPanelPoint = function(mark){
+			mark = d3.select(mark);
+			var opt = model.options;
+			var panelPoint = {
+				x : 0,
+				y : 0,
+				titleX : 0,
+				titleY : 0
+			};
+			var markPoint = {
+				cx : Number(mark.attr('cx')),
+				cy : Number(mark.attr('cy'))		
+			};
+			
+			var viewBox = model.getViewBoxValue();
+			console.log(viewBox);
+			if(markPoint.cx + opt.infoPanelhorizontalGap + opt.infoPanelWidth > viewBox.width ){
+				panelPoint.x =  markPoint.cx - opt.infoPanelhorizontalGap - opt.infoPanelWidth;
+				panelPoint.titleX = markPoint.cx  - opt.infoPanelhorizontalGap + opt.infoTopPadding - opt.infoPanelWidth;
+			}else{
+				panelPoint.x = markPoint.cx + opt.infoPanelhorizontalGap;
+				panelPoint.titleX = markPoint.cx + opt.infoPanelhorizontalGap + opt.infoTopPadding;
+			}
+			panelPoint.y = markPoint.cy + opt.infoPanelverticalGap;
+			panelPoint.titleY = markPoint.cy + opt.infoPanelverticalGap + opt.infoLeftPadding + 14;
+			return panelPoint;
+		};
+		/* 更新 infoPanel 內容*/
+		base.UpdateInfoPanelText = function(mark, stage, visible, data){
+			if(stage){
+				var d3Stage = d3.select(stage);
+				var infoPanel = d3Stage.select('.infoPanel');
+				var infoText = d3Stage.select('.panel-title');
+				if(visible){
+					var panelPoint = infoPanelPoint(mark);
+					infoPanel
+						.classed('panel-show', true)
+						.attr('x', panelPoint.x)
+						.attr('y', panelPoint.y);
+			
+					infoText
+						.classed('panel-show', true)
+						.attr('x', panelPoint.titleX)
+						.attr('y', panelPoint.titleY)
+						.text(infoTextContext(data));
+				}else{
+					infoPanel.classed('panel-show', false);
+					infoText.classed('panel-show', false);
+					infoText.text('');
+				}
+			}
+		};
+		
+		/* find stage*/
+		var findStage = function(mark){
+			var node = $(mark);
+			var findDepth = 15;
+			//取得svg
+			while(node.attr('class') != 'radar' &&  findDepth-- > 0){
+				node = node.parent();
+			}
+			//代表搜尋完 findDepth 數 沒有有找到 svg
+			if(node.attr('class') != 'radar' || findDepth <= -1){
+				node = null;	
+			}
+			return (node) ? node[0] : node;
+		};
+		
 		/* 滑鼠滑入 mark時的處理 */
 		base.markMouseOver = function(data){
 			var areaBox = $(this).parent().parent().parent()[0];
 			var areaGroup = $(this).parent().parent().find('.area-group')[0];
 			weakenAllAreaColor(areaBox);
 			strengthenAreaColro(areaGroup);
+			var stage = findStage(this);
+			base.UpdateInfoPanelText(this, stage, true, data);
 		};
 		
 		 /* 滑鼠滑出 mark 時的處理 */
@@ -411,10 +508,12 @@
 			var areaBox = $(this).parent().parent().parent()[0];
 			var areaGroup = $(this).parent().parent().find('.area-group')[0];
 			restoreAreaColor(areaBox, areaGroup);
+			var stage = findStage(this);
+			base.UpdateInfoPanelText(this, stage, false, data);
 		};
 		
 		/* */
-		base.appendMark = function(markGulp, point, color){
+		base.appendMark = function(markGulp, point, pointData, color){
 			var mark;
 			var opt = model.options;
 			//圓形
@@ -424,15 +523,16 @@
 					.attr('cx', point.x)
 					.attr('cy', point.y)
 					.attr('r', opt.markRadius)
-					.style('fill', color);
-					//mark[0][0] = point;
+					.style('fill', color)
+					.datum(pointData);	//bind data
 				mark.on('mouseover', this.markMouseOver)
 					.on('mouseout' , this.markMouseOut);
 			}
 			//矩形
 			if(model.options.markType === MARK_TYPE.MARK_TYPE){
 				mark = markGulp.append(opt.markType);
-				mark.attr('class', 'mark');
+				mark.attr('class', 'mark')
+					.datum(pointData);	//bind data
 			}
 			return mark;
 		};
@@ -440,10 +540,10 @@
 		base.drawMarkPoint = function(areaContainer, markPoints, color ){
 			var markGulp = areaContainer.append('g').attr('class', 'mark-group');
 			for(var index=0, count=markPoints.length ; index < count ; index++ ){
-				this.appendMark(markGulp, markPoints[index], color);
+				this.appendMark(markGulp, markPoints[index].point, markPoints[index].pointData, color);
 			}
 		};
-			
+		
 		/* 繪製area折線*/
 		base.drawAreaPolygon = function(areaContainer, ploygonPoint, color){
 			var areaGroup = areaContainer.append('g');
@@ -481,7 +581,7 @@
 						var radius = model.verticalLength() / (opt.maxValue - opt.minValue) * pointData.value + opt.centerRadius;
 						var point = this.point(radius, radians);
 						areaPoints.push(point.x + ',' + point.y); //ploygon format	
-						markPoints.push(point);					
+						markPoints.push({point : point, pointData : pointData});					
 					}
 					var color = model.getAreaColor(areaIndex);
 					this.drawAreaPolygon(areaContainer, areaPoints.join(' '), color);
@@ -587,7 +687,6 @@
 				var axixGroup = stage.append('g').attr('class', 'vertical-web');
 				var titleGroup = stage.append('g').attr('class', 'title-group');				
 				var className = model.verticalClass();
-				//console.log(stage.datum());
 				for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
 					var radians = opt.onePiece * index; 	//當前縱軸的弧度
 					var outSidePoint = this.point(model.verticalLength() + opt.centerRadius, radians);
@@ -619,6 +718,7 @@
 					 .attr("viewBox",opt.viewBox)
 					 .attr("preserveAspectRatio", opt.preserveAspectRatio)
 					 .datum(model.getData());
+					 //.attr('index', function(d,i){return i;});	//寫入索引值
 			return stage;
 		};
 		
@@ -631,6 +731,7 @@
 				this.drawWeb(stage);
 				this.drawArea(stage);
 				this.drawFollowMouse(stage);
+				this.drawInfoPanel(stage);
 			}
 		};
 		
