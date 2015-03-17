@@ -224,6 +224,63 @@ $('#twoSilder').change(function(){
 
 ### 設定 Configure
 ```javascript
+defaultOption = {
+				//stage
+				viewPort : '100%, 100%',		//svg長寬。 width height
+				viewBox : '0,0,600,600',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
+				preserveAspectRatio : "none",	//svg zoom mode
+				//vertical
+				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
+				verticalZoom : 0.76,				//縱軸縮放值
+				verticalAxisLength : 0,			//縱軸長
+				verticalStyle : AXIS_TYPE.DASH,	//
+				maxValue : 100,					//縱軸上的最大值
+				minValue : 0,					//縱軸上的最小值
+				//horizontal
+				visibleHorizontalWeb : true,	//是否呈現雷達圖橫網
+				horizontalStyle : AXIS_TYPE.DASH,
+				//scale
+				scale : 10,						//縱軸刻度數
+				visibleScale : true,			//是否要呈現刻度
+				scaleFontDx : 3,				//刻度文字水平偏移
+				scaleFontDy : 0,				//刻度文字垂直偏移
+				scaleFontColor : 'black',		//刻度文字顏色
+				scaleFontSize : 14,				//刻度文字大小
+				scaleUnit : '%',				//單位顯示
+				//area
+				visibleArea : true,				//是否呈現各點的區塊連接
+				areaColor : '#FFEB3B, #673AB7, #4CAF50, #FF9800, #9C27B0, #3F51B5, #8BC34A, #E91E63, #795548, #009688',
+				//mark
+				visibleMark : true,				//是否呈現標記點
+				markType : MARK_TYPE.CIRCLE,	//預設標記點樣式
+				markRadius : 7,					//標記半徑
+				//public prpoerty
+				dx : 0,							//繪製參考點水平偏移量
+				dy : 0,							//繪製參考點垂直偏移量
+				layer : 5,						//橫網層數
+				centerType : CENTER_TYPE.DOUNT,	//雷達網中心要呈現的樣式
+				centerRadius : 25,				//中心點半徑
+				//system auto calculate (系統會自動計算的欄位)
+				pointCount : 0,
+				onePiece : 0,
+				//假設值
+				//title
+				surmiseFontGap: 3,				//假設的font gap
+				verticalAxisTitleGap : 6,
+				//follow mouse icon
+				visibleFollowIcon : false,		//是否呈現跟隨滑鼠笑果
+				followIcon : '',				//svg path
+				//information panel
+				visibleInfoPanel :true,
+				infoPanelWidth: 70,
+				infoPanelHeight :24,
+				infoPanelRadiusX :5,			//面板的圓角
+				infoPanelRadiusY :5,
+				infoPanelhorizontalGap : 10,
+				infoPanelverticalGap :10,
+				infoLeftPadding : 3,
+				infoTopPadding : 4,
+			};
 ```
 
 
