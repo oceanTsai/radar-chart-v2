@@ -5,7 +5,10 @@
   "keywords": [
     "radar",
     "chart",
-    "d3"
+    "d3",
+     "雷達",
+     "向量雷達圖",
+     "radar v2"
   ],
   "author": "ocean",
   "repository": {
