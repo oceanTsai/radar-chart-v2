@@ -744,10 +744,10 @@
 	//  雷達圖畫家 ： 控制畫筆產生雷達圖
 	// 
 	// -------------------------- 
-	var RaderPainter = function(d3){
+	var RaderPainter = function(d3, chartPan){
 		var base = RaderPainter.prototype,
 			chartDepot = {},
-			pan = new ChartPan(),
+			pan = chartPan,
 			//修正firefox hasOwnProperty bug
 			hasAttr = function(obj, attrName){
 				var has = false;
@@ -868,10 +868,10 @@
 	};
 	
 	if(!window.RaderPainter){		
-		window.RaderPainter = new RaderPainter(d3);
+		window.RaderPainter = new RaderPainter(d3, new ChartPan());
 	}
 	
 	if(typeof(module)!= "undefined"){
-		module.exports = new RaderPainter(d3);
+		module.exports = new RaderPainter(d3, new ChartPan());
 	}
 }).call(this, document, d3, $);
