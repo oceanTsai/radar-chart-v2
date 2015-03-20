@@ -768,7 +768,6 @@
 				}
 			},
 			registerChart = function(identity, model){
-				unRegistChart(identity);
 				if(!hasAttr(chartDepot, identity)  ||  !chartDepot.hasOwnProperty(identity)){
 					chartDepot[identity] = model;
 					success = true;
