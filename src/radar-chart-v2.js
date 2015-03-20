@@ -759,23 +759,20 @@
 				}
 				return has;
 			},
-			registerChart = function(identity, model){
-				var success = false;
-				if(!hasAttr(chartDepot, identity)  ||  !chartDepot.hasOwnProperty(identity)){
-					chartDepot[identity] = model;
-					success = true;
-				}
-				return success;
-			},
 			unRegistChart = function(identity){
-				var success = false;
 				if(hasAttr(chartDepot, identity) || chartDepot.hasOwnProperty(identity)){
 					chartDepot[identity].destroy();
 					chartDepot[identity] = null;
 					delete chartDepot[identity];
 					success = true;
 				}
-				return success;
+			},
+			registerChart = function(identity, model){
+				unRegistChart(identity);
+				if(!hasAttr(chartDepot, identity)  ||  !chartDepot.hasOwnProperty(identity)){
+					chartDepot[identity] = model;
+					success = true;
+				}
 			},
 			getChartModel = function(identity){
 				var model;
