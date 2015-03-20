@@ -109,6 +109,21 @@
 			this.options.pointCount = data[0].length;
 		};
 		
+		/*  
+		 * 依半徑與弧度取得一個點
+		 * radius	半徑
+		 * radians	弧度
+		 */
+		base.point = function(radius, radians){
+			//dx 水平偏移
+			//dy 垂直偏移
+			//主要用於偏移坐標基準點（圓心）
+			return {
+				x : radius * -Math.sin(radians) + this.options.dx,
+				y : radius * -Math.cos(radians) + this.options.dy
+			};
+		};
+		
 		/*
 		 * 設定資料
 		 */
@@ -307,17 +322,7 @@
 		 * radians	弧度
 		 */
 		base.point = function(radius, radians){
-			//dx 水平偏移
-			//dy 垂直偏移
-			//主要用於偏移坐標基準點（圓心）
-			return {
-				x : radius * -Math.sin(radians) + model.options.dx,
-				y : radius * -Math.cos(radians) + model.options.dy
-			};
-		};
-		
-		/* 準備所需參數值 */
-		base.prepareParam = function(){
+			return model.point(radius, radians);
 		};
 		
 		/* 上移一層 */
@@ -336,10 +341,6 @@
 			var node = areaContainer.last();
 			node.remove();
 			areaBox.prepend(node);
-		};
-		
-		/* 指定圖層插入 */
-		base.insertPlaneAt = function(display, index){	
 		};
 		
 		/* 圖層插入dom最前頭 (放在最底層)*/
@@ -440,7 +441,6 @@
 			};
 			
 			var viewBox = model.getViewBoxValue();
-			console.log(viewBox);
 			if(markPoint.cx + opt.infoPanelhorizontalGap + opt.infoPanelWidth > viewBox.width ){
 				panelPoint.x =  markPoint.cx - opt.infoPanelhorizontalGap - opt.infoPanelWidth;
 				panelPoint.titleX = markPoint.cx  - opt.infoPanelhorizontalGap + opt.infoTopPadding - opt.infoPanelWidth;
@@ -726,7 +726,6 @@
 		base.drawChart = function(elements, chartModel){
 			model = chartModel;
 			if(model.hasData()){
-				this.prepareParam();
 				var stage = this.drawStage(elements);
 				this.drawWeb(stage);
 				this.drawArea(stage);
@@ -749,9 +748,20 @@
 		var base = RaderPainter.prototype,
 			chartDepot = {},
 			pan = new ChartPan(),
+			//修正firefox hasOwnProperty bug
+			hasAttr = function(obj, attrName){
+				var has = false;
+				for(var attr in obj){
+					if(attr == attrName){
+						has = true;
+						break; 
+					}
+				}
+				return has;
+			},
 			registerChart = function(identity, model){
 				var success = false;
-				if(!chartDepot.hasOwnProperty(identity)){
+				if(!hasAttr(chartDepot, identity)  ||  !chartDepot.hasOwnProperty(identity)){
 					chartDepot[identity] = model;
 					success = true;
 				}
@@ -759,7 +769,7 @@
 			},
 			unRegistChart = function(identity){
 				var success = false;
-				if(chartDepot.hasOwnProperty(identity)){
+				if(hasAttr(chartDepot, identity) || chartDepot.hasOwnProperty(identity)){
 					chartDepot[identity].destroy();
 					chartDepot[identity] = null;
 					delete chartDepot[identity];
@@ -769,7 +779,7 @@
 			},
 			getChartModel = function(identity){
 				var model;
-				if(chartDepot.hasOwnProperty(identity)){
+				if(hasAttr(chartDepot,identity ) || chartDepot.hasOwnProperty(identity)){
 					model = chartDepot[identity];
 				}
 				return model;
@@ -781,7 +791,8 @@
 				return (val instanceof HTMLElement || (typeof val === "object" && val.nodeType && val.nodeType === 1));
 			},
 			canBeIteration= function(list){
-				return (list.hasOwnProperty('length') && list.length > 0);
+				var hasProperty = hasAttr(list, 'length');
+				return (hasProperty && list.length > 0);
 			};
 		//d3 js reference
 		base.d3 = d3;
@@ -798,10 +809,6 @@
 		 */
 		base.breakArea = function(svg){
 			pan.breakArea(svg);
-		};
-		
-		/* 指定圖層插入 */
-		base.insertPlaneAt = function(display, index){
 		};
 		
 		/* 圖層插入最前頭 
