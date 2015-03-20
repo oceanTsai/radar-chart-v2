@@ -843,6 +843,7 @@
 				elements = document.querySelectorAll(identity);
 				if(canBeIteration(elements)){
 					var model = new ChartModel(data, opt);
+					unRegistChart(identity);
 					registerChart(identity, model);
 					pan.drawChart(elements, model);
 				}
