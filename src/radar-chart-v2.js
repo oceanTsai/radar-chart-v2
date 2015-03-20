@@ -243,7 +243,7 @@
 		/* 取得 area 顏色*/
 		base.getAreaColor = function(index){
 			var color = 'grey';
-			var areaColorList = clearWhitespace(this.options.areaColor).split(',');
+			var areaColorList = this.getAllAreaColor();
 			if(areaColorList && areaColorList.length > 0){
 				color = areaColorList[ index % areaColorList.length ];
 			}
@@ -859,6 +859,7 @@
 			if(isString(identity) && unRegistChart(identity)){
 				elements = document.querySelectorAll(identity);
 				if(canBeIteration(elements)){
+					unRegistChart(identity);
 					pan.clearChart(elements);
 				}
 			}
