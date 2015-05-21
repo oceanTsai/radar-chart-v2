@@ -760,6 +760,7 @@
 				return has;
 			},
 			unRegistChart = function(identity){
+				//console.log(hasAttr(chartDepot, identity))
 				if(hasAttr(chartDepot, identity) || chartDepot.hasOwnProperty(identity)){
 					chartDepot[identity].destroy();
 					chartDepot[identity] = null;
@@ -853,10 +854,12 @@
 		
 		base.clearChart = function(identity){
 			var elements;
-			if(isString(identity) && unRegistChart(identity)){
+			if(unRegistChart(identity)){
+				unRegistChart(identity);
+			}
+			if(isString(identity)){
 				elements = document.querySelectorAll(identity);
-				if(canBeIteration(elements)){
-					unRegistChart(identity);
+				if(canBeIteration(elements)){					
 					pan.clearChart(elements);
 				}
 			}
