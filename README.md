@@ -12,44 +12,44 @@ svg 雷達圖
 ```
 var data = [
      	[
-           {title: "國文", value: 20 }, 
-           {title: "數學", value: 0	}, 
-           {title: "英文", value: 10 },  
-           {title: "歷史", value: 40 },  
-           {title: "物理", value: 90 },
-           {title: "生物", value: 57 },
-           {title: "公民", value: 30 },
-           {title: "地理", value: 100}
+           {title: "國文", value: 20 ,showValue : "A"}, 
+           {title: "數學", value: 0	,showValue : "A"}, 
+           {title: "英文", value: 10 ,showValue : "A"},  
+           {title: "歷史", value: 40 ,showValue : "A"},  
+           {title: "物理", value: 90 ,showValue : "A"},
+           {title: "生物", value: 57 ,showValue : "A"},
+           {title: "公民", value: 30 ,showValue : "A"},
+           {title: "地理", value: 100,showValue : "A"}
         ],
         [
-           {title: "國文", value: 100 }, 
-           {title: "數學", value: 20	}, 
-           {title: "英文", value: 70 },  
-           {title: "歷史", value: 95 },  
-           {title: "物理", value: 80 },
-           {title: "生物", value: 0 },
-           {title: "公民", value: 33 },
-           {title: "地理", value: 66 }
+           {title: "國文", value: 100 ,showValue : "A"}, 
+           {title: "數學", value: 20	,showValue : "A"}, 
+           {title: "英文", value: 70 ,showValue : "A"},  
+           {title: "歷史", value: 95 ,showValue : "A"},  
+           {title: "物理", value: 80 ,showValue : "A"},
+           {title: "生物", value: 0 ,showValue : "A"},
+           {title: "公民", value: 33 ,showValue : "A"},
+           {title: "地理", value: 66 ,showValue : "A"}
         ],
         [
-           {title: "國文", value: 40 }, 
-           {title: "數學", value: 60	}, 
-           {title: "英文", value: 72 },  
-           {title: "歷史", value: 86 },  
-           {title: "物理", value: 92 },
-           {title: "生物", value: 57 },
-           {title: "公民", value: 23 },
-           {title: "地理", value: 48 }
+           {title: "國文", value: 40 ,showValue : "A"}, 
+           {title: "數學", value: 60	,showValue : "A"}, 
+           {title: "英文", value: 72 ,showValue : "A"},  
+           {title: "歷史", value: 86 ,showValue : "A"},  
+           {title: "物理", value: 92 ,showValue : "A"},
+           {title: "生物", value: 57 ,showValue : "A"},
+           {title: "公民", value: 23 ,showValue : "A"},
+           {title: "地理", value: 48 ,showValue : "A"}
         ],
         [
-           {title: "國文", value: 20 }, 
-           {title: "數學", value: 10	}, 
-           {title: "英文", value: 32 },  
-           {title: "歷史", value: 36 },  
-           {title: "物理", value: 22 },
-           {title: "生物", value: 37 },
-           {title: "公民", value: 0 },
-           {title: "地理", value: 99 }
+           {title: "國文", value: 20 ,showValue : "A"}, 
+           {title: "數學", value: 10	,showValue : "A"}, 
+           {title: "英文", value: 32 ,showValue : "A"},  
+           {title: "歷史", value: 36 ,showValue : "A"},  
+           {title: "物理", value: 22 ,showValue : "A"},
+           {title: "生物", value: 37 ,showValue : "A"},
+           {title: "公民", value: 0 ,showValue : "A"},
+           {title: "地理", value: 99 ,showValue : "A"}
         ]
 ];
 ```

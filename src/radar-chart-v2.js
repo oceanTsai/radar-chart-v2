@@ -423,7 +423,7 @@
 		};
 		
 		var infoTextContext = function(data){
-			return data.title + ':' + data.value;
+			return data.title + ':' + data.showValue;
 		};
 		
 		var infoPanelPoint = function(mark){
