@@ -83,8 +83,8 @@
 				surmiseFontGap: 3,				//假設的font gap
 				verticalAxisTitleGap : 6,
 				//follow mouse icon
-				visibleFollowIcon : false,		//是否呈現跟隨滑鼠笑果
-				followIcon : '',				//svg path
+				visibleCursor : false,			//是否呈現跟隨滑鼠笑果
+				cursorIcon : '',				//svg path
 				//information panel
 				visibleInfoPanel :true,
 				infoPanelWidth: 70,
@@ -120,11 +120,11 @@
 	 *  opt 			操作屬性
 	 *  dataList 		繪製圖表的來源資料。
 	 */
-	var RadaModule = function(AXIS_TYPE, StringUtil, opt, dataList){
+	var RadarModule = function(AXIS_TYPE, StringUtil, opt, dataList){
 		//------------------------
 		// private member
 		//------------------------
-		var RadaPrototype = RadaModule.prototype;
+		var RadaPrototype = RadarModule.prototype;
 		var thiz = this;
 		var provider;								//繪製圖表的來源資料。
 		var options = opt;
@@ -187,8 +187,7 @@
 			dataProvider(dataList);
 			calViewBox();
 			calAxisLength();	
-			calDefaultOffset();
-			
+			calDefaultOffset();	
 		};
 		
 		//------------------------
@@ -407,12 +406,223 @@
 
 
 	//--------------------------
-	//  Chart rander Module
+	//  Chart Render Module
 	//  繪製邏輯處理層
 	//-------------------------- 
-	var RanderModule = (function(window, document, d3, $){
+	var RenderView = (function(window, document, d3, $){
 
+		var infoTextContext = function(data){
+			return data.title + ':' + data.showValue;
+		};
+		
+		//TODO 需要在整理
+		var calPanelPoint = function(mark, model){
+			var viewBox = model.getViewBoxValue();
+			var opt = model.getOptions();
+			var point = { x : 0, y : 0, titleX : 0, titleY : 0 };
+
+			mark = d3.select(mark);
+			
+			var markPoint = { cx : Number(mark.attr('cx')), cy : Number(mark.attr('cy'))};
+			
+			if(markPoint.cx + opt.infoPanelhorizontalGap + opt.infoPanelWidth > viewBox.width ){
+				point.x =  markPoint.cx - opt.infoPanelhorizontalGap - opt.infoPanelWidth;
+				point.titleX = markPoint.cx  - opt.infoPanelhorizontalGap + opt.infoTopPadding - opt.infoPanelWidth;
+			}else{
+				point.x = markPoint.cx + opt.infoPanelhorizontalGap;
+				point.titleX = markPoint.cx + opt.infoPanelhorizontalGap + opt.infoTopPadding;
+			}
+			point.y = markPoint.cy + opt.infoPanelverticalGap;
+			point.titleY = markPoint.cy + opt.infoPanelverticalGap + opt.infoLeftPadding + 14;
+			return point;
+		};
+
+		var appendMark = function(gulp, point, pointData, color, opt, markMouseOver, markMouseOut){
+			var mark;
+			//圓形
+			if(opt.markType ===  MARK_TYPE.CIRCLE){
+				mark = gulp.append(opt.markType);
+				mark.attr('class', 'mark')
+					.attr('cx', point.x)
+					.attr('cy', point.y)
+					.attr('r', opt.markRadius)
+					.style('fill', color)
+					.datum(pointData);	//bind data
+				mark.on('mouseover', markMouseOver)
+					.on('mouseout' , markMouseOut);
+			}
+			//矩形
+			if(model.options.markType === MARK_TYPE.MARK_TYPE){
+				mark = gulp.append(opt.markType);
+				mark.attr('class', 'mark')
+					.datum(pointData);	//bind data
+			}
+			return mark;
+		};
+		
+		return {
+			//繪製跟隨滑鼠的 icon 
+			drawCursor : function(stage, model){
+				var opt = model.getOptions();
+				if(opt.visibleCursor){
+					var container = stage.append('g').attr('class', 'followMouse-box');
+						container.append('path')
+								 .attr('class', 'follow-Icon')
+								 .attr('d', opt.cursorIcon);
+				}
+			},
+			// 繪製標文字資訊
+			drawPanel : function(stage, model){
+				var opt = model.options;
+				if(opt.visibleInfoPanel){
+					var panel = stage.append('g').attr('class','infoPanel-group');
+			        	panel.append('rect')
+			        		 .attr('class' , 'infoPanel')
+			        		 .attr('width' , opt.infoPanelWidth)
+			        		 .attr('height', opt.infoPanelHeight)
+			        		 .attr('x', 0)
+			        		 .attr('y', 0)
+			        		 .attr('rx', opt.infoPanelRadiusX)
+			        		 .attr('ry', opt.infoPanelRadiusY);
+			          	panel.append('text').attr('class', 'panel-title');
+			      }
+			},
+			// 更新 infoPanel 內容
+			updatePanelText : function(mark, stage, visible, data){
+				if(stage){
+					var d3Stage = d3.select(stage);
+					var panel = d3Stage.select('.infoPanel');
+					var text = d3Stage.select('.panel-title');
+					if(visible){
+						var point = calPanelPoint(mark);
+							panel.classed('panel-show', true)
+								 .attr('x', point.x)
+								 .attr('y', point.y);
+				
+							text.classed('panel-show', true)
+								.attr('x', point.titleX)
+								.attr('y', point.titleY)
+								.text(infoTextContext(data));
+					}else{
+						panel.classed('panel-show', false);
+						text.classed('panel-show', false);
+						text.text('');
+					}
+				}
+			},
+			/* 繪製標記點 */
+			drawMarkPoint : function(container, points, color ){
+				var gulp = container.append('g').attr('class', 'mark-group');
+				for(var index=0, count=points.length ; index < count ; index++ ){
+					appendMark(gulp, points[index].point, points[index].pointData, color);
+				}
+			}
+		};
+		
 	})(window, document, d3, $);
+
+
+
+	//--------------------------
+	//  Active
+	//  互動處理
+	//-------------------------- 
+	var ActiveModule = (function(window, document, d3, $, RenderView){
+		
+		// find stage
+		var findStage = function(mark){
+			var node = $(mark);
+			var depth = 15;
+			//取得svg
+			while(node.attr('class') != 'radar' &&  depth-- > 0){
+				node = node.parent();
+			}
+			//代表搜尋完 depth 數 沒有有找到 svg
+			if(node.attr('class') != 'radar' || depth <= -1){
+				node = null;	
+			}
+			return (node) ? node[0] : node;
+		};
+
+		// 前進一層 
+		var nextLayer = function(svg){
+				var areaBox = $(svg).find('.area-box');
+				var node = areaBox.find('.area-container').first();
+					node.remove();
+				areaBox.append(node);
+		};
+		// 退回一層
+		var backLayer = function(){
+			var areaBox = $(svg).find('.area-box');
+			var node = areaBox.find('.area-container').last();
+				node.remove();
+			areaBox.prepend(node);
+		};
+		// 將目標插入最底層 (DOM的最前頭)
+		var insertFirst = function(display){
+			var childer = $(display);
+				childer.remove();
+				childer.parent().prepend(childer[0]);
+		};
+		// 將目標插入最上層 (DOM最後頭)
+		var insertLast = function(display){
+			var childer = $(display);
+				childer.remove();
+				childer.parent().append(childer[0]);
+		};
+		// 弱化全部 area 色彩
+		var weakenAllAreaColor = function(display){
+			d3.select(display).selectAll('.area-group').select('.area').classed('areaFade', true);
+		};
+		// 強化單一 area 色彩
+		var strengthenAreaColro = function(display){
+			d3.select(display).select('.area').classed('areaFade', false).classed('areaHover', true);
+		};
+		//恢復 area 原來色彩
+		var restoreAreaColor = function(groupContainer, focusDisplay){
+			d3.select(groupContainer).selectAll('.area-group').select('.area').classed('areaFade', false);
+			d3.select(focusDisplay).select('.area').classed('areaHover', false);
+		};
+		
+		return {
+			/* 滑鼠滑入 area 時的處理 */
+			areaMouseOver : function(){
+				var area = $(this).parent().parent()[0];
+				weakenAllAreaColor(area);
+				strengthenAreaColro(this);
+			},
+			/* 滑鼠滑出 area 時的處理 */
+			areaMouseOut : function(){
+				restoreAreaColor($(this).parent().parent()[0], this);
+			},
+			/* 滑鼠點擊 area 的處理*/
+			areaMouseDown : function(){
+				insertLast($(this).parent()[0]);
+			},
+			/* 滑鼠滑入 mark時的處理 */
+			markMouseOver : function(data){
+				var areaBox = $(this).parent().parent().parent()[0];
+				var areaGroup = $(this).parent().parent().find('.area-group')[0];
+				weakenAllAreaColor(areaBox);
+				strengthenAreaColro(areaGroup);
+				var stage = findStage(this);
+				RenderView.updatePanelText(this, stage, true, data);
+			},
+			/* 滑鼠滑出 mark 時的處理 */
+			markMouseOut : function(data){
+				var areaBox = $(this).parent().parent().parent()[0];
+				var areaGroup = $(this).parent().parent().find('.area-group')[0];
+				restoreAreaColor(areaBox, areaGroup);
+				var stage = findStage(this);
+				RenderView.updatePanelText(this, stage, false, data);
+			}
+		};
+	})(window, document, d3, $, RenderView);
+
+	//--------------------------
+	//  
+	//  Control
+	//-------------------------- 
 
 
 
@@ -1228,7 +1438,7 @@
 		base.drawChart = function(identity, data, opt){
 
 			//test ----------------------------------------------------- 
-			var rm = new RadaModule(AXIS_TYPE, StringUtil, Options.mix(opt), data);
+			var rm = new RadarModule(AXIS_TYPE, StringUtil, Options.mix(opt), data);
 			
 			//console.log( rm.getViewPort() );
 			//console.log(rm.getViewBoxValue());
