@@ -29,19 +29,19 @@
 	//--------------------------
 	// utils
 	//--------------------------
-	var StringUtil = (function(document, d3, $){
+	var StringUtil = (function($){
 		return {
 			clearWhitespace : function(str){
 				return str.replace(/\s/g,"");		
 			}
 		};
-	}).call(this, document, d3, $);
+	}).call(this, $);
 
 
 	//--------------------------
 	// options
 	//--------------------------
-	var Options = (function(document, d3, $){
+	var Options = (function(){
 		var defaultOptions = {
 				//stage
 				viewPort : '100%, 100%',		//svg長寬。 width height
@@ -108,14 +108,17 @@
 		return {
 			mix : mixOptions
 		}
-	}).call(this, document, d3, $);
+	}).call(this);
 
 	//--------------------------
-	//  Chart Module
+	//  Chart Data Module
+	//  圖表的資料處理層
 	//-------------------------- 
 	/**
-	 *  radarData 		繪製圖表的來源資料。
+	 *  AXIS_TYPE		軸類型常數, DI.
+	 *  StringUtil		字串工具, DI.
 	 *  opt 			操作屬性
+	 *  dataList 		繪製圖表的來源資料。
 	 */
 	var RadaModule = function(AXIS_TYPE, StringUtil, opt, dataList){
 		//------------------------
@@ -401,6 +404,16 @@
 		};
 		init();
 	};
+
+
+	//--------------------------
+	//  Chart rander Module
+	//  繪製邏輯處理層
+	//-------------------------- 
+	var RanderModule = (function(window, document, d3, $){
+
+	})(window, document, d3, $);
+
 
 
 	//--------------------------
