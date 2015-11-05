@@ -1,13 +1,13 @@
+/** author : ocean Tsai
+ *  email : contest.start@gmail.com
+ *  licenses : MIT
+ */
 (function(document, d3, $){
-	/* author : ocean Tsai
-	 * email : contest.start@gmail.com
-	 * licenses : MIT
-	 */
+	//--------------------------
+	// const
+	//--------------------------
+	var ARC = 2 * Math.PI; 	//弧
 	
-	//---------------------------
-	// 常數
-	//---------------------------
-	var ARC = 2 * Math.PI;					//弧
 	var CENTER_TYPE = {						//中心顯示的樣式列舉
 				NORMAL : 'normal',			//不留空
 				DOUNT : 'dount',			//園
@@ -15,25 +15,399 @@
 	};
 	var AXIS_TYPE = {
 				DASH : 'dash',
-				LINE : 'line'
+				LINE : 'line',
+				V_DASH : 'v_dash',
+				V_LINE : 'v_line',
+				H_DASH : 'h_dash',
+				H_LINE : 'h_line'
 	};
 	var MARK_TYPE = {
 			CIRCLE : 'circle',
 			RECT : 'rect'
 	};
-	
+
 	//--------------------------
-	// tools
+	// utils
 	//--------------------------
-	/* 清除空白 */
-	var clearWhitespace = function(str){
-		return str.replace(/\s/g,"");
+	var StringUtil = (function(document, d3, $){
+		return {
+			clearWhitespace : function(str){
+				return str.replace(/\s/g,"");		
+			}
+		};
+	}).call(this, document, d3, $);
+
+
+	//--------------------------
+	// options
+	//--------------------------
+	var Options = (function(document, d3, $){
+		var defaultOptions = {
+				//stage
+				viewPort : '100%, 100%',		//svg長寬。 width height
+				viewBox : '0,0,600,600',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
+				preserveAspectRatio : "none",	//svg zoom mode
+				//vertical
+				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
+				verticalZoom : 0.76,				//縱軸縮放值
+				
+				verticalStyle : AXIS_TYPE.V_DASH,	//
+				maxValue : 100,					//縱軸上的最大值
+				minValue : 0,					//縱軸上的最小值
+				//horizontal
+				visibleHorizontalWeb : true,	//是否呈現雷達圖橫網
+				horizontalStyle : AXIS_TYPE.V_DASH,
+				//scale
+				scale : 10,						//縱軸刻度數
+				visibleScale : true,			//是否要呈現刻度
+				scaleFontDx : 3,				//刻度文字水平偏移
+				scaleFontDy : 0,				//刻度文字垂直偏移
+				scaleFontColor : 'black',		//刻度文字顏色
+				scaleFontSize : 14,				//刻度文字大小
+				scaleUnit : '%',				//單位顯示
+				//area
+				visibleArea : true,				//是否呈現各點的區塊連接
+				areaColor : '#FFEB3B, #673AB7, #4CAF50, #FF9800, #9C27B0, #3F51B5, #8BC34A, #E91E63, #795548, #009688',
+				//mark
+				visibleMark : true,				//是否呈現標記點
+				markType : MARK_TYPE.CIRCLE,	//預設標記點樣式
+				markRadius : 7,					//標記半徑
+				//public prpoerty
+				dx : 0,							//繪製參考點水平偏移量
+				dy : 0,							//繪製參考點垂直偏移量
+				layer : 5,						//橫網層數
+				centerType : CENTER_TYPE.DOUNT,	//雷達網中心要呈現的樣式
+				centerRadius : 25,				//中心點半徑
+				//假設值
+				//title
+				surmiseFontGap: 3,				//假設的font gap
+				verticalAxisTitleGap : 6,
+				//follow mouse icon
+				visibleFollowIcon : false,		//是否呈現跟隨滑鼠笑果
+				followIcon : '',				//svg path
+				//information panel
+				visibleInfoPanel :true,
+				infoPanelWidth: 70,
+				infoPanelHeight :24,
+				infoPanelRadiusX :5,			//面板的圓角
+				infoPanelRadiusY :5,
+				infoPanelhorizontalGap : 10,
+				infoPanelverticalGap :10,
+				infoLeftPadding : 3,
+				infoTopPadding : 4
+		};
+		var mixOptions = function(opt){
+			var options = Object.create(defaultOptions);
+			if(opt && typeof opt !== 'string' && !(opt instanceof String) && typeof opt === "object"){
+				for(var attr in opt){
+					options[attr] = opt[attr];
+				}
+			}
+			return options;
+		};
+		return {
+			mix : mixOptions
+		}
+	}).call(this, document, d3, $);
+
+	//--------------------------
+	//  Chart Module
+	//-------------------------- 
+	/**
+	 *  radarData 		繪製圖表的來源資料。
+	 *  opt 			操作屬性
+	 */
+	var RadaModule = function(AXIS_TYPE, StringUtil, opt, dataList){
+		//------------------------
+		// private member
+		//------------------------
+		var RadaPrototype = RadaModule.prototype;
+		var thiz = this;
+		var provider;								//繪製圖表的來源資料。
+		var options = opt;
+		var onePiece = 0;							//點與點之間的弧度值。
+		var pointCount = 0;							//雷達圖垂直軸坐標點數量。
+		var vericalAxisPoints = [];					//構成雷達網之垂直點坐標儲存庫。
+		var verticalAxisLength = 0;					//縱軸長
+		var viewBox;
+		
+		/**
+		 * cal view box object value.
+		 */
+		var calViewBox = function(){
+			var vals = thiz.StringUtil.clearWhitespace(options.viewBox).split(',');
+			viewBox = {
+				x : vals[0].toString(),
+				y : vals[1].toString(),
+				width  : vals[2].toString(),
+				height : vals[3].toString()
+			};
+		};
+
+		/**
+		 * 設定垂直軸長 
+		 */
+		var calAxisLength = function(){
+			verticalAxisLength = Math.min(viewBox.height / 2, viewBox.width / 2);	//取小邊
+		};
+
+		/**
+		 * 設定預設偏移
+		 */
+		var calDefaultOffset = function(){
+			//changed prototype attar
+			Object.getPrototypeOf(options).dx = viewBox.width / 2;
+			Object.getPrototypeOf(options).dy = viewBox.height / 2;
+		};
+
+		/*
+		 * 產生雷達圖的資料
+		 */
+		var dataProvider = function(value){
+			switch(value){
+				case undefined :
+					return provider;
+					break;
+				default :
+					if(value !== provider){
+						provider = value;
+						pointCount = RadaPrototype.calPointCount(provider);
+						onePiece = RadaPrototype.calOnePrice(pointCount);
+					}
+			}
+		};
+
+		//------------------------
+		// init property
+		//------------------------
+		var init = function(){
+			dataProvider(dataList);
+			calViewBox();
+			calAxisLength();	
+			calDefaultOffset();
+			
+		};
+		
+		//------------------------
+		// super member
+		//------------------------
+		RadaPrototype.ARC = 2 * Math.PI; 	//弧
+		RadaPrototype.StringUtil = StringUtil;
+		RadaPrototype.AXIS_TYPE = AXIS_TYPE;
+		/**
+		 * 計算點與點之間的弧度
+		 */
+		RadaPrototype.calOnePrice = function(count){
+			return this.ARC / count;			
+		};
+
+		/**
+		 * 計算雷達垂直軸數量
+		 */
+		RadaPrototype.calPointCount = function(radarData){
+			return (radarData && radarData.length > 0 && radarData[0].length > 0) ? radarData[0].length : 0;
+		};
+		
+		/*  
+		 * 依半徑與弧度計算出一個出一個坐標點
+		 * radius	半徑
+		 * radians	弧度
+		 */
+		RadaPrototype.point = function(radius, radians, dx, dy){
+			//dx 水平偏移 options.dx
+			//dy 垂直偏移 options.dy
+			//主要用於偏移坐標基準點（圓心）
+			return {
+				x : radius * -Math.sin(radians) + dx,
+				y : radius * -Math.cos(radians) + dy
+			};
+		};
+
+		/** 
+		 * 取得垂直軸 class name
+		 */
+		RadaPrototype.axisClass = function(style){
+			var className = '';
+			switch(style){
+				case this.AXIS_TYPE.V_DASH:
+					className = 'vertical-axis dash';
+					break;
+				case this.AXIS_TYPE.V_LINE:
+					className = 'vertical-axis';
+					break;
+				case this.AXIS_TYPE.H_DASH:
+					className = 'horizontal-axis dash';
+					break;
+				case this.AXIS_TYPE.H_LINE:
+					className = 'horizontal-axis';
+					break;
+			}
+			return className;
+		};
+
+		
+		//------------------------
+		// public member
+		//------------------------
+		
+
+		/**
+		 * 取得參數操作物件
+		 */
+		thiz.getOptions = function(){
+			return options;
+		};
+
+		/**
+		 * 確定是否有資料
+		 */
+		thiz.existenceProvider = function(){
+			return (provider && provider.length > 0)? true : false;
+		};
+
+		/**
+		 * 取得 svg viewPort 數值物件 
+		 */
+		thiz.getViewPort = function(){
+			var vals = this.StringUtil.clearWhitespace(options.viewPort).split(',');
+			return {
+				width  : vals[0].toString(),
+				height : vals[1].toString()
+			};
+		};
+		
+		/**
+		 * 取得 svg viewbox 數值物件 
+		 */
+		thiz.getViewBoxValue = function(){
+			return viewBox;
+		};
+
+		/**
+		 * 依索引取回垂直軸上的title
+		 * TODO : 這個要加強
+		 */
+		thiz.verticalTitle = function(index){
+			return provider[0][index].title;
+		};
+
+		/**
+		 * 取得垂直軸長 
+		 */
+		thiz.verticalLength = function(){
+			return verticalAxisLength * options.verticalZoom;
+		};
+
+		/** 
+		 * 取得縱軸 className
+		 */
+		thiz.verticalClass = function(){
+			return this.axisClass(options.verticalStyle);
+		};
+		
+		/** 
+		 * 取得橫軸 className
+		 */
+		thiz.horizontalClass = function(){
+			return this.axisClass(options.horizontalStyle);
+		};
+
+		/** 
+		 * 取得橫軸層與層之間的距離 
+		 */
+		thiz.horizontalAxisGap = function(){
+			return this.verticalLength() / options.layer;
+		};
+
+		/** 
+		 * 取得尺標刻度之間的距離 
+		 */
+		thiz.scaleGap = function(){
+			return this.verticalLength() / options.scale;
+		};
+		
+		/**
+		 * 每一刻度基礎參考數值
+		 */
+		thiz.scaleRefValue = function(){
+			return (options.maxValue - options.minValue) / options.scale;
+		};
+		
+		/** 
+		 * 取得 全部 area 顏色
+		 */
+		thiz.getAllAreaColor = function(){
+			return this.StringUtil.clearWhitespace(options.areaColor).split(',');
+		};
+		
+		/** 
+		 * 取得 area 顏色
+		 */
+		thiz.getAreaColor = function(index){
+			var color = 'grey';
+			var areaColorList = this.getAllAreaColor();
+			if(areaColorList && areaColorList.length > 0){
+				color = areaColorList[ index % areaColorList.length ];
+			}
+			return color;
+		};
+		
+		/** 
+		 * 弧度轉角度 
+		 */
+		thiz.angle = function(radian){
+			return radian * 180 / Math.PI;
+		};
+
+		/* 趣味小 icon
+		thiz.initFollowIcon = function(){
+			//followIcon
+			var r = defaultOption.centerRadius / 2;
+			var p1 = {
+						x : defaultOption.dx,
+						y : defaultOption.dy - r
+				};
+			var p2 = {
+					x : defaultOption.dx + r,
+					y : defaultOption.dy + r
+			};
+			var p3 = {
+					x : defaultOption.dx - r,
+					y : defaultOption.dy + r
+			};
+			defaultOption.followIcon = 'M ' + p1.x + ' ' + p1.y + ' L ' + p2.x + ' ' + p2.y  + ' L ' + p3.x + ' ' + p3.y + ' Z';
+		};
+		*/
+		
+		
+		/* 
+		 * 銷毀 
+		 */
+		thiz.destroy = function(){
+			try{
+				RadaPrototype = null;
+				thiz = null;
+				provider = null;
+				options = null;
+				if(vericalAxisPoints){
+					vericalAxisPoints.length = 0;
+				}
+				viewBox = null;
+			}
+			catch(e){
+				console.log('executed destroy method fail!')
+				console.log(e);
+			}
+		};
+		init();
 	};
-	
+
+
 	//--------------------------
 	//  資料模組 : 處理資料邏輯
 	//-------------------------- 
 	var ChartModel = function(source, opt){
+
 		var base = ChartModel.prototype,		//ChartModel的prototype,用來定義共通的public method.
 			data,								//
 			defaultOption = {
@@ -163,7 +537,7 @@
 		
 		/* 取得viewPort數值物件 */
 		base.getViewPort = function(){
-			var val = clearWhitespace(this.options.viewPort).split(',');
+			var val = StringUtil.clearWhitespace(this.options.viewPort).split(',');
 			return {
 				width  : val[0],
 				height : val[1]
@@ -173,7 +547,7 @@
 		/* 取得viewbox數值物件 */
 		base.getViewBoxValue = function(){
 			var viewBox = (this.options) ? this.options.viewBox : defaultOption.viewBox;
-			var val = clearWhitespace(viewBox).split(',');
+			var val = StringUtil.clearWhitespace(viewBox).split(',');
 			return {
 				x : val[0],
 				y : val[1],
@@ -237,7 +611,7 @@
 		
 		/* 取得 全部 area 顏色*/
 		base.getAllAreaColor = function(){
-			return clearWhitespace(this.options.areaColor).split(',');
+			return StringUtil.clearWhitespace(this.options.areaColor).split(',');
 		};
 		
 		/* 取得 area 顏色*/
@@ -839,6 +1213,24 @@
 		 * opt : 雷達圖參數
 		 */
 		base.drawChart = function(identity, data, opt){
+
+			//test ----------------------------------------------------- 
+			var rm = new RadaModule(AXIS_TYPE, StringUtil, Options.mix(opt), data);
+			
+			//console.log( rm.getViewPort() );
+			//console.log(rm.getViewBoxValue());
+			//console.log(rm.getOptions());
+			//console.log(rm.verticalLength());
+			//console.log(rm.verticalClass())
+			//console.log(rm.horizontalAxisGap());
+			//console.log(rm.scaleGap());
+			//console.log(rm.scaleRefValue());
+			//console.log(rm.getAllAreaColor());
+			//console.log(rm.getAreaColor(1));
+			//console.log(rm.angle(30));
+			//rm.destroy();
+			//test -------- 
+
 			var elements;
 			if(isString(identity) && data && Array.isArray(data) && data.length > 0){
 				elements = document.querySelectorAll(identity);
