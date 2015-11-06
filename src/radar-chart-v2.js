@@ -6,8 +6,6 @@
 	//--------------------------
 	// const
 	//--------------------------
-	var ARC = 2 * Math.PI; 	//弧
-	
 	var CENTER_TYPE = {						//中心顯示的樣式列舉
 				NORMAL : 'normal',			//不留空
 				DOUNT : 'dount',			//園
@@ -37,7 +35,6 @@
 		};
 	}).call(this, $);
 
-
 	//--------------------------
 	// options
 	//--------------------------
@@ -50,7 +47,6 @@
 				//vertical
 				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
 				verticalZoom : 0.76,				//縱軸縮放值
-				
 				verticalStyle : AXIS_TYPE.V_DASH,	//
 				maxValue : 100,					//縱軸上的最大值
 				minValue : 0,					//縱軸上的最小值
@@ -82,15 +78,12 @@
 				//title
 				surmiseFontGap: 3,				//假設的font gap
 				verticalAxisTitleGap : 6,
-				//follow mouse icon
-				visibleCursor : false,			//是否呈現跟隨滑鼠笑果
-				cursorIcon : '',				//svg path
 				//information panel
-				visibleInfoPanel :true,
-				infoPanelWidth: 70,
-				infoPanelHeight :24,
-				infoPanelRadiusX :5,			//面板的圓角
-				infoPanelRadiusY :5,
+				visiblePanel :true,
+				panelWidth: 70,
+				panelHeight :24,
+				panelRadiusX :5,			//面板的圓角
+				panelRadiusY :5,
 				infoPanelhorizontalGap : 10,
 				infoPanelverticalGap :10,
 				infoLeftPadding : 3,
@@ -107,12 +100,13 @@
 		};
 		return {
 			mix : mixOptions
-		}
+		};
 	}).call(this);
 
 	//--------------------------
 	//  Chart Data Module
 	//  圖表的資料處理層
+	//  用來處理資料計算邏輯
 	//-------------------------- 
 	/**
 	 *  AXIS_TYPE		軸類型常數, DI.
@@ -121,19 +115,16 @@
 	 *  dataList 		繪製圖表的來源資料。
 	 */
 	var RadarModule = function(AXIS_TYPE, StringUtil, opt, dataList){
-		//------------------------
-		// private member
-		//------------------------
-		var RadaPrototype = RadarModule.prototype;
+		var modulePrototype = RadarModule.prototype;
 		var thiz = this;
 		var provider;								//繪製圖表的來源資料。
 		var options = opt;
-		var onePiece = 0;							//點與點之間的弧度值。
-		var pointCount = 0;							//雷達圖垂直軸坐標點數量。
-		var vericalAxisPoints = [];					//構成雷達網之垂直點坐標儲存庫。
 		var verticalAxisLength = 0;					//縱軸長
 		var viewBox;
-		
+		thiz.pointCount = 0;							//雷達圖垂直軸坐標點數量。
+		thiz.vericalAxisPoints = [];					//構成雷達網之垂直點坐標儲存庫。
+		thiz.onePiece = 0;							//點與點之間的弧度值。
+
 		/**
 		 * cal view box object value.
 		 */
@@ -163,50 +154,24 @@
 			Object.getPrototypeOf(options).dy = viewBox.height / 2;
 		};
 
-		/*
-		 * 產生雷達圖的資料
-		 */
-		var dataProvider = function(value){
-			switch(value){
-				case undefined :
-					return provider;
-					break;
-				default :
-					if(value !== provider){
-						provider = value;
-						pointCount = RadaPrototype.calPointCount(provider);
-						onePiece = RadaPrototype.calOnePrice(pointCount);
-					}
-			}
-		};
-
-		//------------------------
-		// init property
-		//------------------------
-		var init = function(){
-			dataProvider(dataList);
-			calViewBox();
-			calAxisLength();	
-			calDefaultOffset();	
-		};
 		
 		//------------------------
 		// super member
 		//------------------------
-		RadaPrototype.ARC = 2 * Math.PI; 	//弧
-		RadaPrototype.StringUtil = StringUtil;
-		RadaPrototype.AXIS_TYPE = AXIS_TYPE;
+		modulePrototype.ARC = 2 * Math.PI; 	//弧
+		modulePrototype.StringUtil = StringUtil;
+		modulePrototype.AXIS_TYPE = AXIS_TYPE;
 		/**
 		 * 計算點與點之間的弧度
 		 */
-		RadaPrototype.calOnePrice = function(count){
+		modulePrototype.calOnePrice = function(count){
 			return this.ARC / count;			
 		};
 
 		/**
 		 * 計算雷達垂直軸數量
 		 */
-		RadaPrototype.calPointCount = function(radarData){
+		modulePrototype.calPointCount = function(radarData){
 			return (radarData && radarData.length > 0 && radarData[0].length > 0) ? radarData[0].length : 0;
 		};
 		
@@ -215,7 +180,7 @@
 		 * radius	半徑
 		 * radians	弧度
 		 */
-		RadaPrototype.point = function(radius, radians, dx, dy){
+		modulePrototype.point = function(radius, radians, dx, dy){
 			//dx 水平偏移 options.dx
 			//dy 垂直偏移 options.dy
 			//主要用於偏移坐標基準點（圓心）
@@ -228,7 +193,7 @@
 		/** 
 		 * 取得垂直軸 class name
 		 */
-		RadaPrototype.axisClass = function(style){
+		modulePrototype.axisClass = function(style){
 			var className = '';
 			switch(style){
 				case this.AXIS_TYPE.V_DASH:
@@ -247,12 +212,9 @@
 			return className;
 		};
 
-		
 		//------------------------
 		// public member
 		//------------------------
-		
-
 		/**
 		 * 取得參數操作物件
 		 */
@@ -360,725 +322,342 @@
 		thiz.angle = function(radian){
 			return radian * 180 / Math.PI;
 		};
-
-		/* 趣味小 icon
-		thiz.initFollowIcon = function(){
-			//followIcon
-			var r = defaultOption.centerRadius / 2;
-			var p1 = {
-						x : defaultOption.dx,
-						y : defaultOption.dy - r
-				};
-			var p2 = {
-					x : defaultOption.dx + r,
-					y : defaultOption.dy + r
-			};
-			var p3 = {
-					x : defaultOption.dx - r,
-					y : defaultOption.dy + r
-			};
-			defaultOption.followIcon = 'M ' + p1.x + ' ' + p1.y + ' L ' + p2.x + ' ' + p2.y  + ' L ' + p3.x + ' ' + p3.y + ' Z';
-		};
-		*/
 		
+		/*
+		 * 
+		 */
+		thiz.dataProvider = function(value){
+			switch(value){
+				case undefined :
+					return provider;
+					break;
+				default :
+					if(value !== provider){
+						provider = value;
+						this.pointCount = modulePrototype.calPointCount(provider);
+						this.onePiece = modulePrototype.calOnePrice(this.pointCount);
+					}
+			}
+		};
 		
 		/* 
 		 * 銷毀 
 		 */
 		thiz.destroy = function(){
 			try{
-				RadaPrototype = null;
-				thiz = null;
+				modulePrototype = null;
 				provider = null;
 				options = null;
-				if(vericalAxisPoints){
-					vericalAxisPoints.length = 0;
+				if(this.vericalAxisPoints){
+					this.vericalAxisPoints.length = 0;
 				}
 				viewBox = null;
+				thiz = null;
 			}
 			catch(e){
 				console.log('executed destroy method fail!')
 				console.log(e);
 			}
 		};
-		init();
+
+		//------------------------
+		// init property
+		//------------------------
+		var constructorMethod = function(){
+			thiz.dataProvider(dataList);
+			calViewBox();
+			calAxisLength();	
+			calDefaultOffset();	
+		};
+		constructorMethod();
 	};
 
 
 	//--------------------------
-	//  Chart Render Module
-	//  繪製邏輯處理層
+	//  Render View Model
+	//  圖表的繪製模組
+	//  處理繪製的邏輯
 	//-------------------------- 
-	var RenderView = (function(window, document, d3, $){
+	var RenderView = function(window, document, $, d3){
+		var viewPrototype = RenderView.prototype;
+		var thiz = this;
 
-		var infoTextContext = function(data){
-			return data.title + ':' + data.showValue;
-		};
-		
-		//TODO 需要在整理
-		var calPanelPoint = function(mark, model){
-			var viewBox = model.getViewBoxValue();
-			var opt = model.getOptions();
-			var point = { x : 0, y : 0, titleX : 0, titleY : 0 };
-
-			mark = d3.select(mark);
-			
-			var markPoint = { cx : Number(mark.attr('cx')), cy : Number(mark.attr('cy'))};
-			
-			if(markPoint.cx + opt.infoPanelhorizontalGap + opt.infoPanelWidth > viewBox.width ){
-				point.x =  markPoint.cx - opt.infoPanelhorizontalGap - opt.infoPanelWidth;
-				point.titleX = markPoint.cx  - opt.infoPanelhorizontalGap + opt.infoTopPadding - opt.infoPanelWidth;
-			}else{
-				point.x = markPoint.cx + opt.infoPanelhorizontalGap;
-				point.titleX = markPoint.cx + opt.infoPanelhorizontalGap + opt.infoTopPadding;
-			}
-			point.y = markPoint.cy + opt.infoPanelverticalGap;
-			point.titleY = markPoint.cy + opt.infoPanelverticalGap + opt.infoLeftPadding + 14;
-			return point;
-		};
-
-		var appendMark = function(gulp, point, pointData, color, opt, markMouseOver, markMouseOut){
-			var mark;
-			//圓形
-			if(opt.markType ===  MARK_TYPE.CIRCLE){
-				mark = gulp.append(opt.markType);
-				mark.attr('class', 'mark')
-					.attr('cx', point.x)
-					.attr('cy', point.y)
-					.attr('r', opt.markRadius)
-					.style('fill', color)
-					.datum(pointData);	//bind data
-				mark.on('mouseover', markMouseOver)
-					.on('mouseout' , markMouseOut);
-			}
-			//矩形
-			if(model.options.markType === MARK_TYPE.MARK_TYPE){
-				mark = gulp.append(opt.markType);
-				mark.attr('class', 'mark')
-					.datum(pointData);	//bind data
-			}
-			return mark;
-		};
-		
-		return {
-			//繪製跟隨滑鼠的 icon 
-			drawCursor : function(stage, model){
-				var opt = model.getOptions();
-				if(opt.visibleCursor){
-					var container = stage.append('g').attr('class', 'followMouse-box');
-						container.append('path')
-								 .attr('class', 'follow-Icon')
-								 .attr('d', opt.cursorIcon);
-				}
-			},
-			// 繪製標文字資訊
-			drawPanel : function(stage, model){
-				var opt = model.options;
-				if(opt.visibleInfoPanel){
-					var panel = stage.append('g').attr('class','infoPanel-group');
-			        	panel.append('rect')
-			        		 .attr('class' , 'infoPanel')
-			        		 .attr('width' , opt.infoPanelWidth)
-			        		 .attr('height', opt.infoPanelHeight)
-			        		 .attr('x', 0)
-			        		 .attr('y', 0)
-			        		 .attr('rx', opt.infoPanelRadiusX)
-			        		 .attr('ry', opt.infoPanelRadiusY);
-			          	panel.append('text').attr('class', 'panel-title');
-			      }
-			},
-			// 更新 infoPanel 內容
-			updatePanelText : function(mark, stage, visible, data){
-				if(stage){
-					var d3Stage = d3.select(stage);
-					var panel = d3Stage.select('.infoPanel');
-					var text = d3Stage.select('.panel-title');
-					if(visible){
-						var point = calPanelPoint(mark);
-							panel.classed('panel-show', true)
-								 .attr('x', point.x)
-								 .attr('y', point.y);
-				
-							text.classed('panel-show', true)
-								.attr('x', point.titleX)
-								.attr('y', point.titleY)
-								.text(infoTextContext(data));
-					}else{
-						panel.classed('panel-show', false);
-						text.classed('panel-show', false);
-						text.text('');
-					}
-				}
-			},
-			/* 繪製標記點 */
-			drawMarkPoint : function(container, points, color ){
-				var gulp = container.append('g').attr('class', 'mark-group');
-				for(var index=0, count=points.length ; index < count ; index++ ){
-					appendMark(gulp, points[index].point, points[index].pointData, color);
-				}
-			}
-		};
-		
-	})(window, document, d3, $);
-
-
-
-	//--------------------------
-	//  Active
-	//  互動處理
-	//-------------------------- 
-	var ActiveModule = (function(window, document, d3, $, RenderView){
-		
-		// find stage
-		var findStage = function(mark){
-			var node = $(mark);
-			var depth = 15;
-			//取得svg
-			while(node.attr('class') != 'radar' &&  depth-- > 0){
-				node = node.parent();
-			}
-			//代表搜尋完 depth 數 沒有有找到 svg
-			if(node.attr('class') != 'radar' || depth <= -1){
-				node = null;	
-			}
-			return (node) ? node[0] : node;
-		};
-
-		// 前進一層 
-		var nextLayer = function(svg){
-				var areaBox = $(svg).find('.area-box');
-				var node = areaBox.find('.area-container').first();
-					node.remove();
-				areaBox.append(node);
-		};
-		// 退回一層
-		var backLayer = function(){
-			var areaBox = $(svg).find('.area-box');
-			var node = areaBox.find('.area-container').last();
-				node.remove();
-			areaBox.prepend(node);
-		};
-		// 將目標插入最底層 (DOM的最前頭)
-		var insertFirst = function(display){
-			var childer = $(display);
-				childer.remove();
-				childer.parent().prepend(childer[0]);
-		};
-		// 將目標插入最上層 (DOM最後頭)
-		var insertLast = function(display){
-			var childer = $(display);
-				childer.remove();
-				childer.parent().append(childer[0]);
-		};
-		// 弱化全部 area 色彩
-		var weakenAllAreaColor = function(display){
-			d3.select(display).selectAll('.area-group').select('.area').classed('areaFade', true);
-		};
-		// 強化單一 area 色彩
-		var strengthenAreaColro = function(display){
-			d3.select(display).select('.area').classed('areaFade', false).classed('areaHover', true);
-		};
-		//恢復 area 原來色彩
-		var restoreAreaColor = function(groupContainer, focusDisplay){
-			d3.select(groupContainer).selectAll('.area-group').select('.area').classed('areaFade', false);
-			d3.select(focusDisplay).select('.area').classed('areaHover', false);
-		};
-		
-		return {
-			/* 滑鼠滑入 area 時的處理 */
-			areaMouseOver : function(){
-				var area = $(this).parent().parent()[0];
-				weakenAllAreaColor(area);
-				strengthenAreaColro(this);
-			},
-			/* 滑鼠滑出 area 時的處理 */
-			areaMouseOut : function(){
-				restoreAreaColor($(this).parent().parent()[0], this);
-			},
-			/* 滑鼠點擊 area 的處理*/
-			areaMouseDown : function(){
-				insertLast($(this).parent()[0]);
-			},
-			/* 滑鼠滑入 mark時的處理 */
-			markMouseOver : function(data){
-				var areaBox = $(this).parent().parent().parent()[0];
-				var areaGroup = $(this).parent().parent().find('.area-group')[0];
-				weakenAllAreaColor(areaBox);
-				strengthenAreaColro(areaGroup);
-				var stage = findStage(this);
-				RenderView.updatePanelText(this, stage, true, data);
-			},
-			/* 滑鼠滑出 mark 時的處理 */
-			markMouseOut : function(data){
-				var areaBox = $(this).parent().parent().parent()[0];
-				var areaGroup = $(this).parent().parent().find('.area-group')[0];
-				restoreAreaColor(areaBox, areaGroup);
-				var stage = findStage(this);
-				RenderView.updatePanelText(this, stage, false, data);
-			}
-		};
-	})(window, document, d3, $, RenderView);
-
-	//--------------------------
-	//  
-	//  Control
-	//-------------------------- 
-
-
-
-	//--------------------------
-	//  資料模組 : 處理資料邏輯
-	//-------------------------- 
-	var ChartModel = function(source, opt){
-
-		var base = ChartModel.prototype,		//ChartModel的prototype,用來定義共通的public method.
-			data,								//
-			defaultOption = {
-				//stage
-				viewPort : '100%, 100%',		//svg長寬。 width height
-				viewBox : '0,0,600,600',		//svg選擇顯示範圍，如同攝影機的攝影範圍。 x,y,width,height
-				preserveAspectRatio : "none",	//svg zoom mode
-				//vertical
-				visibleVerticalWeb : true,		//是否呈現雷達圖垂直網
-				verticalZoom : 0.76,				//縱軸縮放值
-				verticalAxisLength : 0,			//縱軸長
-				verticalStyle : AXIS_TYPE.DASH,	//
-				maxValue : 100,					//縱軸上的最大值
-				minValue : 0,					//縱軸上的最小值
-				//horizontal
-				visibleHorizontalWeb : true,	//是否呈現雷達圖橫網
-				horizontalStyle : AXIS_TYPE.DASH,
-				//scale
-				scale : 10,						//縱軸刻度數
-				visibleScale : true,			//是否要呈現刻度
-				scaleFontDx : 3,				//刻度文字水平偏移
-				scaleFontDy : 0,				//刻度文字垂直偏移
-				scaleFontColor : 'black',		//刻度文字顏色
-				scaleFontSize : 14,				//刻度文字大小
-				scaleUnit : '%',				//單位顯示
-				//area
-				visibleArea : true,				//是否呈現各點的區塊連接
-				areaColor : '#FFEB3B, #673AB7, #4CAF50, #FF9800, #9C27B0, #3F51B5, #8BC34A, #E91E63, #795548, #009688',
-				//mark
-				visibleMark : true,				//是否呈現標記點
-				markType : MARK_TYPE.CIRCLE,	//預設標記點樣式
-				markRadius : 7,					//標記半徑
-				//public prpoerty
-				dx : 0,							//繪製參考點水平偏移量
-				dy : 0,							//繪製參考點垂直偏移量
-				layer : 5,						//橫網層數
-				centerType : CENTER_TYPE.DOUNT,	//雷達網中心要呈現的樣式
-				centerRadius : 25,				//中心點半徑
-				//system auto calculate (系統會自動計算的欄位)
-				pointCount : 0,
-				onePiece : 0,
-				//假設值
-				//title
-				surmiseFontGap: 3,				//假設的font gap
-				verticalAxisTitleGap : 6,
-				//follow mouse icon
-				visibleFollowIcon : false,		//是否呈現跟隨滑鼠笑果
-				followIcon : '',				//svg path
-				//information panel
-				visibleInfoPanel :true,
-				infoPanelWidth: 70,
-				infoPanelHeight :24,
-				infoPanelRadiusX :5,			//面板的圓角
-				infoPanelRadiusY :5,
-				infoPanelhorizontalGap : 10,
-				infoPanelverticalGap :10,
-				infoLeftPadding : 3,
-				infoTopPadding : 4,
-			};
-		this.options;							//defaultOption與使用者傳入的options結合後的opt物件。
-		this.vericalAxisPoints=[];
-		/*
-		 * 一個點的弧度值
-		 */
-		base.setOnePrice = function(){
-			this.options.onePiece = ARC / this.options.pointCount;			
-		};
-		
-		/*
-		 * 設定一個雷達面區塊總共的點數
-		 */
-		base.setPointCount = function(data){
-			this.options.pointCount = data[0].length;
-		};
-		
-		/*  
-		 * 依半徑與弧度取得一個點
-		 * radius	半徑
-		 * radians	弧度
-		 */
-		base.point = function(radius, radians){
-			//dx 水平偏移
-			//dy 垂直偏移
-			//主要用於偏移坐標基準點（圓心）
-			return {
-				x : radius * -Math.sin(radians) + this.options.dx,
-				y : radius * -Math.cos(radians) + this.options.dy
-			};
-		};
-		
-		/*
-		 * 設定資料
-		 */
-		base.setData = function(val){
-			if(val != data){
-				data = val;
-				this.setPointCount(data);
-				this.setOnePrice();
-			}
-		};
-		/*
-		 * 取得資料
-		 */
-		base.getData = function(){
-			return data;
-		};
-		
-		/*
-		 * 確定是否有資料
-		 */
-		base.hasData = function(){
-			return (data && data.length > 0);
-		};
-		
-		/*
-		 * 將defaultOption與使用者傳入的option屬性混合，
-		 * defaultOption的屬性將會成為prototype。
-		 */
-		base.mixOptions = function(opt){
-			this.options = Object.create(defaultOption);
-			if(opt && typeof opt !== 'string' && !(opt instanceof String) && typeof opt === "object"){
-				for(var attr in opt){
-					this.options[attr] = opt[attr];
-				}
-			}
-		};
-		
-		/* 取得viewPort數值物件 */
-		base.getViewPort = function(){
-			var val = StringUtil.clearWhitespace(this.options.viewPort).split(',');
-			return {
-				width  : val[0],
-				height : val[1]
-			};
-		};
-		
-		/* 取得viewbox數值物件 */
-		base.getViewBoxValue = function(){
-			var viewBox = (this.options) ? this.options.viewBox : defaultOption.viewBox;
-			var val = StringUtil.clearWhitespace(viewBox).split(',');
-			return {
-				x : val[0],
-				y : val[1],
-				width  : val[2],
-				height : val[3]
-			};
-		};
-		
-		/* 取得垂直軸長 */
-		base.verticalLength = function(){
-			return this.options.verticalAxisLength * this.options.verticalZoom;
-		};
-		
-		/* 取得垂直軸 class name*/
-		base.verticalClass = function(){
-			var className='';
-			switch(this.options.verticalStyle){
-				case AXIS_TYPE.DASH:
-					className = 'vertical-axis dash';
-					break;
-				case AXIS_TYPE.LINE:
-					className = 'vertical-axis';
-					break;
-			}
-			return className;
-		};
-		
-		/* 依索引取回垂直軸上的title*/
-		base.verticalTitle = function(index){
-			return data[0][index].title;
-		};
-		
-		/* 取得橫軸網之間的距離 */
-		base.horizontalAxisGap = function(){
-			return this.verticalLength() / this.options.layer;
-		};
-		
-		/* 取得橫軸 className*/
-		base.horizontalClass = function(){
-			var className='';
-			switch(this.options.horizontalStyle){
-				case AXIS_TYPE.DASH:
-					className = 'horizontal-axis dash';
-					break;
-				case AXIS_TYPE.LINE:
-					className = 'horizontal-axis';
-					break;
-			}
-			return className;
-		};
-
-		/* 取得刻度之間的距離 */
-		base.scaleGap = function(){
-			return this.verticalLength() / this.options.scale;
-		};
-		
-		/* 每一刻度基礎參考數值*/
-		base.scaleRefValue = function(){
-			return (this.options.maxValue - this.options.minValue) / this.options.scale;
-		};
-		
-		/* 取得 全部 area 顏色*/
-		base.getAllAreaColor = function(){
-			return StringUtil.clearWhitespace(this.options.areaColor).split(',');
-		};
-		
-		/* 取得 area 顏色*/
-		base.getAreaColor = function(index){
-			var color = 'grey';
-			var areaColorList = this.getAllAreaColor();
-			if(areaColorList && areaColorList.length > 0){
-				color = areaColorList[ index % areaColorList.length ];
-			}
-			return color;
-		};
-		
-		/* 弧度轉角度 */
-		base.angle = function(radian){
-			return radian * 180 / Math.PI;
-		};
-		
-		/* 
-		 * 銷毀 
-		 */
-		base.destroy = function(){
-		};
-		
-		/*
-		 * init default verticalAxis value
-		 */
-		base.initAxisLength = function(){
-			var viewBox = this.getViewBoxValue();
-			var minSideLength = Math.min(viewBox.height / 2, viewBox.width / 2);	//取小邊
-			defaultOption.verticalAxisLength = minSideLength;
-		};
-		
-		base.initOffset = function(){
-			var viewBox = this.getViewBoxValue();
-			defaultOption.dx = viewBox.width / 2;
-			defaultOption.dy = viewBox.height / 2;
-		};
-		
-		base.initFollowIcon = function(){
-			//followIcon
-			var r = defaultOption.centerRadius / 2;
-			var p1 = {
-						x : defaultOption.dx,
-						y : defaultOption.dy - r
-				};
-			var p2 = {
-					x : defaultOption.dx + r,
-					y : defaultOption.dy + r
-			};
-			var p3 = {
-					x : defaultOption.dx - r,
-					y : defaultOption.dy + r
-			};
-			defaultOption.followIcon = 'M ' + p1.x + ' ' + p1.y + ' L ' + p2.x + ' ' + p2.y  + ' L ' + p3.x + ' ' + p3.y + ' Z';
-		};
-		
-		/*
-		 * 初始化
-		 */
-		base.init = function(source, opt){
-			this.initAxisLength();
-			this.initOffset();
-			this.initFollowIcon();
-			this.mixOptions(opt);
-			this.setData(source);
-		};
-		this.init(source, opt);		
-	};
-	
-	
-	// --------------------------
-	// 畫筆 : 負責繪製處理
-	// pan : rander viewer
-	// --------------------------
-	var ChartPan = function(){
-		var base = ChartPan.prototype,
-			model;
-		
-		/*  
-		 * 依半徑與弧度取得一個點
-		 * radius	半徑
-		 * radians	弧度
-		 */
-		base.point = function(radius, radians){
-			return model.point(radius, radians);
-		};
-		
-		/* 上移一層 */
-		base.nextArea = function(svg){
-			var areaBox = $(svg).find('.area-box');
-			var areaContainer = areaBox.find('.area-container');
-			var node = areaContainer.first();
-			node.remove();
-			areaBox.append(node);			
-		};
-		
-		/* 下移一層 */
-		base.breakArea = function(svg){
-			var areaBox = $(svg).find('.area-box');
-			var areaContainer = areaBox.find('.area-container');
-			var node = areaContainer.last();
-			node.remove();
-			areaBox.prepend(node);
-		};
-		
-		/* 圖層插入dom最前頭 (放在最底層)*/
-		base.insertFirst = function(display){
-			var childer = $(display);
-			var parent = childer.parent();
-			childer.remove();
-			parent.prepend(childer[0]);
-		};
-		
-		/* 圖層插入dom最後頭 (放在圖層的最上層)*/
-		base.insertLast = function(display){
-			var childer = $(display);
-			var parent = childer.parent();
-			childer.remove();
-			parent.append(childer[0]);
-		};
-		
-		/* 繪製跟隨滑鼠的 icon */
-		base.drawFollowMouse = function(stage){
-			var opt = model.options;
-			if(opt.visibleFollowIcon){
-				var followMousebox = stage.append('g').attr('class', 'followMouse-box');
-				followMousebox.append('path')
-							  .attr('class', 'follow-Icon')
-							  .attr('d', opt.followIcon);
-			}
-		};
-		
-		/* 繪製標文字資訊 */
-		base.drawInfoPanel = function(stage){
-			var opt = model.options;
-			if(opt.visibleInfoPanel){
-				var panelGroup = stage.append('g').attr('class','infoPanel-group');
-		        	panelGroup.append('rect')
-		        			  .attr('class','infoPanel')
-		          			  .attr('width',	opt.infoPanelWidth)
-		          			  .attr('height', opt.infoPanelHeight)
-		          			  .attr('x', 0)
-		          			  .attr('y', 0)
-		          			  .attr('rx', opt.infoPanelRadiusX)
-		          			  .attr('ry', opt.infoPanelRadiusY);
-		          	panelGroup.append('text').attr('class', 'panel-title');
+		// 繪製標文字資訊		
+		viewPrototype.drawPanel = function(stage, options){
+			if(options.visiblePanel){
+				var panel = stage.append('g').attr('class','infoPanel-group');
+		        	panel.append('rect')
+		        		 .attr('class' , 'infoPanel')
+		        		 .attr('width' , options.panelWidth)
+		        		 .attr('height', options.panelHeight)
+		        		 .attr('x', 0)
+		        		 .attr('y', 0)
+		        		 .attr('rx', options.panelRadiusX)
+		        		 .attr('ry', options.panelRadiusY);
+		          	panel.append('text').attr('class', 'panel-title');
 		      }
 		};
-		
-		/* 弱化全部 area 色彩*/
-		var weakenAllAreaColor = function(display){
-			d3.select(display).selectAll('.area-group').select('.area').classed('areaFade', true);
-		};
-			
-		/* 強化單一 area 色彩*/
-		var strengthenAreaColro = function(display){
-			d3.select(display).select('.area').classed('areaFade', false).classed('areaHover', true);
-		};
-		
-		/* 恢復 area 原來色彩 */
-		var restoreAreaColor = function(groupContainer, focusDisplay){
-			d3.select(groupContainer).selectAll('.area-group').select('.area').classed('areaFade', false);
-			d3.select(focusDisplay).select('.area').classed('areaHover', false);
-		};
-		
-		/* 滑鼠滑入 area 時的處理 */
-		base.areaMouseOver = function(data){
-			var areaBox = $(this).parent().parent()[0];
-			weakenAllAreaColor(areaBox);
-			strengthenAreaColro(this);
-		};
-		
-		/* 滑鼠滑出 area 時的處理 */
-		base.areaMouseOut = function(data){
-			var areaBox = $(this).parent().parent()[0];
-			restoreAreaColor(areaBox, this);
-		};
-		
-		/* 滑鼠點擊 area 的處理*/
-		base.areaMouseDown = function(data){
-			var areaContainer = $(this).parent()[0];
-			base.insertLast(areaContainer);
-		};
-		
-		var infoTextContext = function(data){
-			return data.title + ':' + data.showValue;
-		};
-		
-		var infoPanelPoint = function(mark){
-			mark = d3.select(mark);
-			var opt = model.options;
-			var panelPoint = {
-				x : 0,
-				y : 0,
-				titleX : 0,
-				titleY : 0
-			};
-			var markPoint = {
-				cx : Number(mark.attr('cx')),
-				cy : Number(mark.attr('cy'))		
-			};
-			
-			var viewBox = model.getViewBoxValue();
-			if(markPoint.cx + opt.infoPanelhorizontalGap + opt.infoPanelWidth > viewBox.width ){
-				panelPoint.x =  markPoint.cx - opt.infoPanelhorizontalGap - opt.infoPanelWidth;
-				panelPoint.titleX = markPoint.cx  - opt.infoPanelhorizontalGap + opt.infoTopPadding - opt.infoPanelWidth;
-			}else{
-				panelPoint.x = markPoint.cx + opt.infoPanelhorizontalGap;
-				panelPoint.titleX = markPoint.cx + opt.infoPanelhorizontalGap + opt.infoTopPadding;
-			}
-			panelPoint.y = markPoint.cy + opt.infoPanelverticalGap;
-			panelPoint.titleY = markPoint.cy + opt.infoPanelverticalGap + opt.infoLeftPadding + 14;
-			return panelPoint;
-		};
-		/* 更新 infoPanel 內容*/
-		base.UpdateInfoPanelText = function(mark, stage, visible, data){
-			if(stage){
-				var d3Stage = d3.select(stage);
-				var infoPanel = d3Stage.select('.infoPanel');
-				var infoText = d3Stage.select('.panel-title');
-				if(visible){
-					var panelPoint = infoPanelPoint(mark);
-					infoPanel
-						.classed('panel-show', true)
-						.attr('x', panelPoint.x)
-						.attr('y', panelPoint.y);
-			
-					infoText
-						.classed('panel-show', true)
-						.attr('x', panelPoint.titleX)
-						.attr('y', panelPoint.titleY)
-						.text(infoTextContext(data));
-				}else{
-					infoPanel.classed('panel-show', false);
-					infoText.classed('panel-show', false);
-					infoText.text('');
+
+		/* 繪製標記點 */
+		viewPrototype.drawMarkPoint = function(container, points, color , options, model){
+			var gulp = container.append('g').attr('class', 'mark-group');
+			for(var index=0, count=points.length ; index < count ; index++ ){
+				var point = points[index].point;
+				var pointData = points[index].pointData;
+				switch(options.markType){
+					case  MARK_TYPE.CIRCLE:
+						//圓形
+						gulp.append(options.markType)
+							.attr('class', 'mark')
+							.attr('cx', point.x)
+							.attr('cy', point.y)
+							.attr('r', options.markRadius)
+							.style('fill', color)
+							.datum({data : pointData, model : model});	//bind data
+						break;
+					case  MARK_TYPE.MARK_TYPE:
+						//矩形
+						gulp.append(opt.markType)
+							.attr('class', 'mark')
+							.datum({data : pointData, model : model});	//bind data
+						break;
 				}
 			}
 		};
 		
+		/**
+		 * 繪製area折線
+		 */
+		viewPrototype.drawAreaPolygon = function(container, points, color){
+			var areaGroup = container.append('g')
+					 .attr('class', 'area-group')
+					 .append('polygon')
+					 .attr('class'  , 'area')
+					 .attr('points' , points)
+					 .style('fill'  , color)
+					 .style('stroke', color);
+			return this;
+			//event listener
+			/* TODO : 移到互動模組
+			areaGroup.on('mouseover', this.areaMouseOver)
+					 .on('mouseout' , this.areaMouseOut)
+					 .on('mousedown', this.areaMouseDown);			
+			*/
+		};
+		
+		/**
+		 * 繪製點所形成的區塊 
+		 */
+		viewPrototype.drawArea = function(stage, model, options){
+			if(options.visibleArea){
+				var areaData = model.dataProvider() //or use stage.datum()
+				var container = stage.append('g').attr('class', 'area-box');
+				var areaPoints = [];
+				var markPoints = [];
+				//out loop hanlde area
+				//inner loop hanlde point
+				for(var areaIndex=0, areaCount=areaData.length; areaIndex < areaCount ; areaIndex++){
+					var currentData   = areaData[areaIndex];
+					var areaContainer = container.append('g').attr('class', 'area-container');
+					areaPoints.length = 0; //clear array
+					markPoints.length = 0; //clear array
+					for(var pointIndex=0,pointCount=model.pointCount ; pointIndex < pointCount; pointIndex++){
+						//cal point
+						var pointData = currentData[pointIndex];
+						var radians   = model.onePiece * pointIndex; 	//當前縱軸的弧度
+						var radius    = model.verticalLength() / (options.maxValue - options.minValue) * pointData.value + options.centerRadius;
+						var point     = model.point(radius, radians, options.dx, options.dy);
+						areaPoints.push(point.x + ',' + point.y);	//ploygon format	
+						markPoints.push({point : point, pointData : pointData});					
+					}
+					var color = model.getAreaColor(areaIndex);
+					this.drawAreaPolygon(areaContainer, areaPoints.join(' '), color);
+					this.drawMarkPoint(areaContainer, markPoints, color, options, model);
+				}
+			}
+			return this;
+		};
+			
+		/** 
+		 * 繪製刻度表 
+		 */
+		viewPrototype.drawScaleLine = function(stage, model, options){
+			if(options.visibleScale){
+				var outSidePoint = model.vericalAxisPoints[0].outSide;
+				var container = stage.append('g').attr('class','scale-group');
+				var gap = model.scaleGap();
+				for(var index=0; index <= options.scale ; index++){
+					var radius = index * gap + options.centerRadius;
+						//刻度固定在弧度0位置
+						var point = model.point(radius, model.onePiece * 0, options.dx, options.dy);
+						container.append('text')
+								  .attr('x', point.x + options.scaleFontDx)
+								  .attr('y', point.y + options.scaleFontDy)
+								  .attr('fill', options.scaleFontColor)
+								  .attr('font-size', options.scaleFontSize + 'px')
+								  .text( (index * model.scaleRefValue()) + options.scaleUnit);
+				}
+			}
+			return this;
+		};
+			
+		/** 
+		 * 繪製水平軸
+		 */
+		viewPrototype.drawHorizontalAxis = function(container, p0, p1, className){
+			container.append('line')
+					 .attr('class', className)
+					 .attr('x1', p0.x)
+					 .attr('y1', p0.y)
+					 .attr('x2', p1.x)
+					 .attr('y2', p1.y);
+			return this;
+		};
+		/** 
+		 * 繪製水平相關的網絡 
+		 */
+		viewPrototype.drawHorizontalWeb = function(stage, model, options){
+			if(options.visibleHorizontalWeb){
+				var axisContainer = stage.append('g').attr('class', 'horizontal-web');
+				var className = model.horizontalClass();
+				var gap = model.horizontalAxisGap();
+				for(var outIndex=0; outIndex <= options.layer ; outIndex++){
+					var radius = outIndex * gap + options.centerRadius;
+					for(var index=0, axisCount=model.pointCount ; index < axisCount ; index++){
+						var p0 = model.point(radius, model.onePiece * index, options.dx , options.dy);
+						var p1 = model.point(radius, model.onePiece * (index+1), options.dx , options.dy);
+						this.drawHorizontalAxis(axisContainer, p0, p1, className);
+					}
+				}
+			}
+			return this;
+		};
+		
+		/** 
+		 * 繪製垂直軸上標題 
+		 * TODO : 需改良加強文字與間隔的計算方式
+		 */
+		viewPrototype.drawVerticalTitle = function(container, options, outSidePoint, title){
+			var x = Math.ceil(outSidePoint.x);
+			var y = Math.ceil(outSidePoint.y);
+			var text = container.append('text').attr('class', 'item-title').text(title); 
+			var fontSize = text.style("font-size").replace('pt','').replace('px','')  | 0;
+			var gapTotal = options.surmiseFontGap * (title.length - 1);
+			var offsetW  = (fontSize * title.length + gapTotal) ;  //
+			var offsetH  = fontSize / 2 | 0;
+			//x is rigth
+			if(x > options.dx){
+				text.attr('x', x + options.verticalAxisTitleGap );
+			}else if(x < options.dx){
+				text.attr('x', x - options.verticalAxisTitleGap - offsetW);
+			}else{
+				//x is center
+				text.attr('x', x - offsetW / 2 );
+			}
+			
+			if(y > options.dy){
+				text.attr('y', y + offsetH + options.verticalAxisTitleGap + 5);
+			}else if(y < options.dy){
+				text.attr('y', y - offsetH - options.verticalAxisTitleGap + -5);
+			}else{
+				text.attr('y', y);
+			}
+			return this;
+		};
+
+		/**
+		 *	繪製垂直軸
+		 */
+		viewPrototype.drawVerticalAxis = function(container, className, outSidePoint, innerPoint){
+			container.append('line')
+					 .attr('class', className)
+					 .attr('x1', outSidePoint.x)
+				 	 .attr('y1', outSidePoint.y)
+				 	 .attr('x2', innerPoint.x)
+				 	 .attr('y2', innerPoint.y);
+			return this;
+		};
+
+		/** 
+		 * 繪製垂直相關的網絡 
+		 */
+		viewPrototype.drawVerticalWeb = function(stage, model, options){
+			if(options.visibleVerticalWeb){
+				model.vericalAxisPoints.length = 0;	//clear array
+				var axisContainer  = stage.append('g').attr('class', 'vertical-web');
+				var titleContainer = stage.append('g').attr('class', 'title-group');				
+				var className  = model.verticalClass();
+				for(var index=0, axisCount=model.pointCount; index < axisCount ; index++){
+					//當前縱軸的弧度
+					var radians = model.onePiece * index;
+					//兩點構成一直線
+					var outSidePoint = model.point(model.verticalLength() + options.centerRadius, radians, options.dx , options.dy);
+					var innerPoint   = model.point(options.centerRadius, radians, options.dx , options.dy);
+					this.drawVerticalAxis(axisContainer, className, outSidePoint, innerPoint);
+					this.drawVerticalTitle(titleContainer, options, outSidePoint, model.verticalTitle(index));
+					model.vericalAxisPoints.push({inner : innerPoint , outSide : outSidePoint});
+				}
+			}
+			return this;
+		};
+		
+		/** 
+		 * 繪製雷達的網 
+		 */
+		viewPrototype.drawWeb = function(stage, model, options){
+			this.drawVerticalWeb(stage, model, options)
+				.drawHorizontalWeb(stage, model, options)
+				.drawScaleLine(stage, model, options);
+			return this;
+		};
+		
+		/* *
+		 * 繪製場景 
+		 * container :  雷達圖的畫布 Canvas of Radar Chart.
+		 * options   :  畫面控制參數 Operating parameters.
+		 */
+		viewPrototype.drawStage = function(container, viewPort, options, dataProvider){
+			return d3.selectAll(container)
+				  	 .append('svg')
+				  	 .attr('class', 'radar')
+				  	 .attr('width'   , viewPort.width)
+				  	 .attr('height'  , viewPort.height)
+				  	 .attr('viewBox' , options.viewBox)
+				  	 .attr('preserveAspectRatio', options.preserveAspectRatio)
+				  	 .datum(dataProvider);	//d3 bind data
+		};
+
+		/** 
+		 * 繪製雷達圖 
+		 */
+		viewPrototype.drawChart = function(container, model){
+			if(model.existenceProvider()){
+				var viewPort  = model.getViewPort();
+				var options   = model.getOptions(); 
+				var dataProvider = model.dataProvider();
+				//draw 
+				var stage = this.drawStage(container, viewPort, options, dataProvider);
+				this.drawWeb(stage, model, options)
+					.drawArea(stage, model, options)
+					.drawPanel(stage, options);
+			}else{
+				console.log("radar data is empty!");
+			}
+		};
+	};
+	
+	//--------------------------
+	//  Interactive
+	//  互動處理
+	//-------------------------- 
+	var InteractiveProxy = function(window, document, $, d3){
+		var interactivePrototype = InteractiveProxy.prototype;
+		var thiz = this;
+
 		/* find stage*/
 		var findStage = function(mark){
 			var node = $(mark);
-			var findDepth = 15;
+			var findDepth = 50;
 			//取得svg
 			while(node.attr('class') != 'radar' &&  findDepth-- > 0){
 				node = node.parent();
@@ -1089,407 +668,182 @@
 			}
 			return (node) ? node[0] : node;
 		};
-		
-		/* 滑鼠滑入 mark時的處理 */
-		base.markMouseOver = function(data){
-			var areaBox = $(this).parent().parent().parent()[0];
-			var areaGroup = $(this).parent().parent().find('.area-group')[0];
-			weakenAllAreaColor(areaBox);
-			strengthenAreaColro(areaGroup);
-			var stage = findStage(this);
-			base.UpdateInfoPanelText(this, stage, true, data);
-		};
-		
-		 /* 滑鼠滑出 mark 時的處理 */
-		base.markMouseOut = function(data){
-			var areaBox = $(this).parent().parent().parent()[0];
-			var areaGroup = $(this).parent().parent().find('.area-group')[0];
-			restoreAreaColor(areaBox, areaGroup);
-			var stage = findStage(this);
-			base.UpdateInfoPanelText(this, stage, false, data);
-		};
-		
-		/* */
-		base.appendMark = function(markGulp, point, pointData, color){
-			var mark;
-			var opt = model.options;
-			//圓形
-			if(opt.markType ===  MARK_TYPE.CIRCLE){
-				mark = markGulp.append(opt.markType);
-				mark.attr('class', 'mark')
-					.attr('cx', point.x)
-					.attr('cy', point.y)
-					.attr('r', opt.markRadius)
-					.style('fill', color)
-					.datum(pointData);	//bind data
-				mark.on('mouseover', this.markMouseOver)
-					.on('mouseout' , this.markMouseOut);
-			}
-			//矩形
-			if(model.options.markType === MARK_TYPE.MARK_TYPE){
-				mark = markGulp.append(opt.markType);
-				mark.attr('class', 'mark')
-					.datum(pointData);	//bind data
-			}
-			return mark;
-		};
-		/* 繪製標記點 */
-		base.drawMarkPoint = function(areaContainer, markPoints, color ){
-			var markGulp = areaContainer.append('g').attr('class', 'mark-group');
-			for(var index=0, count=markPoints.length ; index < count ; index++ ){
-				this.appendMark(markGulp, markPoints[index].point, markPoints[index].pointData, color);
-			}
-		};
-		
-		/* 繪製area折線*/
-		base.drawAreaPolygon = function(areaContainer, ploygonPoint, color){
-			var areaGroup = areaContainer.append('g');
-			areaGroup.attr('class', 'area-group')
-					 .append('polygon')
-					 .attr('class', 'area')
-					 .attr('points',ploygonPoint)
-					 .style('fill', color)
-					 .style('stroke', color);
-			//event listener
-			areaGroup.on('mouseover', this.areaMouseOver)
-					 .on('mouseout' , this.areaMouseOut)
-					 .on('mousedown', this.areaMouseDown);			
-		};
-		
-		/* 繪製點所形成的區塊 */
-		base.drawArea = function(stage){
-			var opt = model.options;
-			if(opt.visibleArea){
-				var areaData = model.getData();
-				var areaBox = stage.append('g').attr('class', 'area-box');
-				var areaPoints = [];
-				var markPoints = [];
-				//out loop hanlde area
-				//inner loop hanlde point
-				for(var areaIndex=0, areaCount=areaData.length; areaIndex < areaCount ; areaIndex++){
-					var currentData = areaData[areaIndex];
-					var areaContainer = areaBox.append('g').attr('class', 'area-container');
-					areaPoints.length = 0; //clear array
-					markPoints.length = 0; //clear array
-					for(var pointIndex=0,pointCount=model.options.pointCount ; pointIndex < pointCount; pointIndex++){
-						//cal point
-						var pointData = currentData[pointIndex];
-						var radians = opt.onePiece * pointIndex; 	//當前縱軸的弧度
-						var radius = model.verticalLength() / (opt.maxValue - opt.minValue) * pointData.value + opt.centerRadius;
-						var point = this.point(radius, radians);
-						areaPoints.push(point.x + ',' + point.y); //ploygon format	
-						markPoints.push({point : point, pointData : pointData});					
-					}
-					var color = model.getAreaColor(areaIndex);
-					this.drawAreaPolygon(areaContainer, areaPoints.join(' '), color);
-					this.drawMarkPoint(areaContainer, markPoints, color);
-				}
-			}
-		};
-		
-		/* 繪製刻度表 */
-		base.drawScaleLine = function(stage){
-			var opt = model.options;
-			if(opt.visibleScale){
-				var outSidePoint = model.vericalAxisPoints[0].outSide;
-				var scalaGroup = stage.append('g').attr('class','scale-group');
-				var gap = model.scaleGap();
-				for(var index=0; index <= opt.scale ; index++){
-					var radius = index * gap + opt.centerRadius;
-						var point = this.point(radius, opt.onePiece * 0);
-						scalaGroup.append('text')
-								  .attr('x', point.x + opt.scaleFontDx)
-								  .attr('y', point.y + opt.scaleFontDy)
-								  .attr('fill', opt.scaleFontColor)
-								  .attr('font-size', opt.scaleFontSize + 'px')
-								  .text( (index * model.scaleRefValue()) + opt.scaleUnit);
-				}
-			}
-		};
-		
-		/* 繪製水平軸*/
-		base.drawHorizontalAxis = function(axixGroup, p0, p1, className){
-			axixGroup.append('line')
-					 .attr('class', className)
-					 .attr('x1', p0.x)
-					 .attr('y1', p0.y)
-					 .attr('x2', p1.x)
-					 .attr('y2', p1.y);
-		};
-		
-		/* 繪製水平相關的網絡 */
-		base.drawHorizontalWeb = function(stage){
-			var opt = model.options;
-			if(opt.visibleHorizontalWeb){
-				var axixGroup = stage.append('g').attr('class', 'horizontal-web');
-				var className = model.horizontalClass();
-				var gap = model.horizontalAxisGap();
-				for(var outIndex=0; outIndex <= opt.layer ; outIndex++){
-					var radius = outIndex * gap + opt.centerRadius;
-					for(var index=0, axisCount = model.options.pointCount ; index < axisCount ; index++){
-						var p0 = this.point(radius, opt.onePiece * index);
-						var p1 = this.point(radius, opt.onePiece * (index+1));
-						//if (index == 0) console.log(p0);
-						this.drawHorizontalAxis(axixGroup, p0, p1, className);
-					}
-				}
-			}
-		};
-		
-		/* 繪製垂直軸上標題 */
-		base.drawVerticalTitle = function(titleGroup, outSidePoint, title){
-			var opt = model.options;
-			var x = Math.ceil(outSidePoint.x);
-			var y = Math.ceil(outSidePoint.y);
-			var text = titleGroup.append('text').attr('class', 'item-title').text(title); 
-			var fontSize = text.style("font-size").replace('pt','').replace('px','')  | 0;
-			var gapTotal =  opt.surmiseFontGap * (title.length - 1);
-			var offsetW  = (fontSize * title.length + gapTotal) ;  //
-			var offsetH  = fontSize / 2 | 0;
 
-			//x is rigth
-			if(x > opt.dx){
-				text.attr('x', x + opt.verticalAxisTitleGap );
-			}else if(x < opt.dx){
-				text.attr('x', x - opt.verticalAxisTitleGap - offsetW);
+		// 前進一層 
+		interactivePrototype.nextLayer = function(svg){
+				var areaBox = $(svg).find('.area-box');
+				var node = areaBox.find('.area-container').first();
+					node.remove();
+				areaBox.append(node);
+		};
+
+		// 退回一層
+		interactivePrototype.backLayer = function(svg){
+			var areaBox = $(svg).find('.area-box');
+			var node = areaBox.find('.area-container').last();
+				node.remove();
+			areaBox.prepend(node);
+		};
+
+		// 將目標插入最底層 (DOM的最前頭)
+		interactivePrototype.insertFirst = function(display){
+			var childer = $(display);
+				//childer.remove();
+				childer.parent().prepend(childer[0]);
+		};
+
+		// 將目標插入最上層 (DOM最後頭)
+		interactivePrototype.insertLast = function(display){
+			var childer = $(display);
+				childer.parent().append(childer[0]);
+		};
+
+		//
+		interactivePrototype.calPanelPoint = function(mark, model){
+			var viewBox = model.getViewBoxValue();
+			var opt = model.getOptions();
+			var point = { x : 0, y : 0, titleX : 0, titleY : 0 };
+			mark = d3.select(mark);
+			var markPoint = { cx : Number(mark.attr('cx')), cy : Number(mark.attr('cy'))};
+			if(markPoint.cx + opt.infoPanelhorizontalGap + opt.panelWidth > Number(viewBox.width) ){
+				point.x =  markPoint.cx - opt.infoPanelhorizontalGap - opt.panelWidth;
+				point.titleX = markPoint.cx  - opt.infoPanelhorizontalGap + opt.infoTopPadding - opt.panelWidth;
 			}else{
-				//x is center
-				text.attr('x', x - offsetW / 2 );
+				point.x = markPoint.cx + opt.infoPanelhorizontalGap;
+				point.titleX = markPoint.cx + opt.infoPanelhorizontalGap + opt.infoTopPadding;
 			}
-			
-			if(y > opt.dy){
-				text.attr('y', y + offsetH + opt.verticalAxisTitleGap + 5);
-			}else if(y < opt.dy){
-				text.attr('y', y - offsetH - opt.verticalAxisTitleGap + -5);
-			}else{
-				text.attr('y', y);
+			point.y = markPoint.cy + opt.infoPanelverticalGap;
+			point.titleY = markPoint.cy + opt.infoPanelverticalGap + opt.infoLeftPadding + 14;
+			return point;
+		};
+		
+		// 更新 infoPanel 內容
+		interactivePrototype.updatePanel = function(mark, panel, text, textContent, model){
+			var point = this.calPanelPoint(mark, model);
+				panel.attr('x', point.x)
+					 .attr('y', point.y);
+				text.attr('x', point.titleX)
+					.attr('y', point.titleY)
+					.text(textContent);
+		};
+		interactivePrototype.showPanel = function(panel, text){
+			panel.classed('panel-show', true);
+			text.classed('panel-show', true);
+		};
+		interactivePrototype.hidePanel = function(panel, text){
+			panel.classed('panel-show', false);
+			text.classed('panel-show', false);
+		};
+
+		/* 滑鼠點擊 area 的處理*/
+		interactivePrototype.areaMouseDown = function(){
+			insertLast($(this).parent()[0]);
+		},
+
+		/* 滑鼠滑入 mark時的處理 */
+		interactivePrototype.markMouseOver = function(data){
+			var stage = findStage(this);
+			if(stage){
+				var d3Stage = d3.select(stage);
+				var panel   = d3Stage.select('.infoPanel');
+				var text    = d3Stage.select('.panel-title');
+				var textContent = data.data.title + ':' + data.data.showValue;
+				thiz.hidePanel(panel, text);
+				thiz.updatePanel(this, panel, text, textContent, data.model);
+				thiz.showPanel(panel, text);
 			}
-		};
-		
-		/* 繪製垂直軸*/
-		base.drawVerticalAxis = function(axixGroup, className, outSidePoint, innerPoint){			
-				axixGroup.append('line')
-						 .attr('class', className)
-					 	 .attr('x1', outSidePoint.x)
-					 	 .attr('y1', outSidePoint.y)
-					 	 .attr('x2', innerPoint.x)
-					 	 .attr('y2', innerPoint.y);		
-		};
-		
-		/* 繪製垂直相關的網絡 */
-		base.drawVerticalWeb = function(stage){
-			var opt = model.options;
-			if(opt.visibleVerticalWeb){
-				model.vericalAxisPoints.length = 0;	//clear array
-				var axixGroup = stage.append('g').attr('class', 'vertical-web');
-				var titleGroup = stage.append('g').attr('class', 'title-group');				
-				var className = model.verticalClass();
-				for(var index=0, axisCount = model.options.pointCount; index < axisCount ; index++){
-					var radians = opt.onePiece * index; 	//當前縱軸的弧度
-					var outSidePoint = this.point(model.verticalLength() + opt.centerRadius, radians);
-					var innerPoint = this.point(opt.centerRadius,radians);
-					var title = model.verticalTitle(index);
-					this.drawVerticalAxis(axixGroup, className, outSidePoint, innerPoint);
-					this.drawVerticalTitle(titleGroup, outSidePoint, title);
-					model.vericalAxisPoints.push({inner : innerPoint , outSide : outSidePoint});
-				}
+		},
+		/* 滑鼠滑出 mark 時的處理 */
+		interactivePrototype.markMouseOut = function(data){
+			var stage = findStage(this);
+			if(stage){
+				var d3Stage = d3.select(stage);
+				var panel   = d3Stage.select('.infoPanel');
+				var text    = d3Stage.select('.panel-title');
+				thiz.hidePanel(panel, text);
+				thiz.updatePanel(this, panel, text, '', data.model);
 			}
-		};
-		
-		/* 繪製雷達的網 */
-		base.drawWeb = function(stage){
-			this.drawVerticalWeb(stage);
-			this.drawHorizontalWeb(stage);
-			this.drawScaleLine(stage);
-		};
-		
-		/* 繪製場景 */
-		base.drawStage = function(elements){
-			var viewPort = model.getViewPort();
-			var opt = model.options;
-			//rander svg
-			var stage = d3.selectAll(elements).append("svg");
-				stage.attr('class', 'radar')
-					 .attr("width", viewPort.width)
-					 .attr("height", viewPort.height)
-					 .attr("viewBox",opt.viewBox)
-					 .attr("preserveAspectRatio", opt.preserveAspectRatio)
-					 .datum(model.getData());
-					 //.attr('index', function(d,i){return i;});	//寫入索引值
-			return stage;
-		};
-		
-		/* 繪製雷達圖 */
-		base.drawChart = function(elements, chartModel){
-			model = chartModel;
-			if(model.hasData()){
-				var stage = this.drawStage(elements);
-				this.drawWeb(stage);
-				this.drawArea(stage);
-				this.drawFollowMouse(stage);
-				this.drawInfoPanel(stage);
+		},
+		//enable or disable interactive.
+		interactivePrototype.interactive = function(enable){
+			//TO 事件移到事件模組
+			if(enable){
+				d3.selectAll('.mark')
+				  .on('mouseover', this.markMouseOver)
+				  .on('mouseout' , this.markMouseOut);
 			}
-		};
-		
-		/* 清除雷達圖 */
-		base.clearChart = function(elements){
-			d3.selectAll(elements).select('svg').remove();
-		};
+		}
 	};
 	
 	// --------------------------
 	//  雷達圖畫家 ： 控制畫筆產生雷達圖
-	// 
+	//  Control
 	// -------------------------- 
-	var RaderPainter = function(d3, chartPan){
-		var base = RaderPainter.prototype,
-			chartDepot = {},
-			pan = chartPan,
-			//修正firefox hasOwnProperty bug
-			hasAttr = function(obj, attrName){
-				var has = false;
-				for(var attr in obj){
-					if(attr == attrName){
-						has = true;
-						break; 
-					}
-				}
-				return has;
-			},
-			unRegistChart = function(identity){
-				//console.log(hasAttr(chartDepot, identity))
-				if(hasAttr(chartDepot, identity) || chartDepot.hasOwnProperty(identity)){
-					chartDepot[identity].destroy();
-					chartDepot[identity] = null;
-					delete chartDepot[identity];
-					success = true;
-				}
-			},
-			registerChart = function(identity, model){
-				if(!hasAttr(chartDepot, identity)  ||  !chartDepot.hasOwnProperty(identity)){
-					chartDepot[identity] = model;
-					success = true;
-				}
-			},
-			getChartModel = function(identity){
-				var model;
-				if(hasAttr(chartDepot,identity ) || chartDepot.hasOwnProperty(identity)){
-					model = chartDepot[identity];
-				}
-				return model;
-			},
-			isString = function(val){
-				return (typeof val === 'string' || val instanceof String);
-			},
-			isHTMLElement = function(val){
-				return (val instanceof HTMLElement || (typeof val === "object" && val.nodeType && val.nodeType === 1));
-			},
-			canBeIteration= function(list){
-				var hasProperty = hasAttr(list, 'length');
-				return (hasProperty && list.length > 0);
-			};
-		//d3 js reference
-		base.d3 = d3;
-		
-		/* 上移一層
-		 * svg : HTML Element
-		 */
-		base.nextArea = function(svg){
-			pan.nextArea(svg);
-		};
-		
-		/* 下移一層
-		 * svg : HTML Element
-		 */
-		base.breakArea = function(svg){
-			pan.breakArea(svg);
-		};
-		
-		/* 圖層插入最前頭 
-		 * display : HTML Element
-		 */
-		base.insertFirst = function(display){
-			pan.insertFirst(display);
-		};
-		
-		/* 圖層插入最後頭 
-		 * display : HTML Element
-		 */
-		base.insertLast = function(display){
-			pan.insertLast(display);
-		};
-		
-		/* 取得 全部 area 顏色*/
-		base.getAllAreaColor = function(identity){
-			return getChartModel(identity).getAllAreaColor();
-		};
-		
-		/* 取得 area 顏色*/
-		base.getAreaColor = function(identity, index){
-			return getChartModel(identity).getAreaColor(index);
-		};
-		
+	var RaderPainter = function(d3){
+		var painterPrototype = RaderPainter.prototype
+		var register = {};
+		var render = new RenderView(window, document, $, d3);
+		var interactiveProxy = new InteractiveProxy(window, document, $, d3);
+
 		/*
 		 * 繪製雷達圖
 		 * identity : id or class
 		 * data : 繪製資料
 		 * opt : 雷達圖參數
 		 */
-		base.drawChart = function(identity, data, opt){
-
-			//test ----------------------------------------------------- 
-			var rm = new RadarModule(AXIS_TYPE, StringUtil, Options.mix(opt), data);
-			
-			//console.log( rm.getViewPort() );
-			//console.log(rm.getViewBoxValue());
-			//console.log(rm.getOptions());
-			//console.log(rm.verticalLength());
-			//console.log(rm.verticalClass())
-			//console.log(rm.horizontalAxisGap());
-			//console.log(rm.scaleGap());
-			//console.log(rm.scaleRefValue());
-			//console.log(rm.getAllAreaColor());
-			//console.log(rm.getAreaColor(1));
-			//console.log(rm.angle(30));
-			//rm.destroy();
-			//test -------- 
-
-			var elements;
-			if(isString(identity) && data && Array.isArray(data) && data.length > 0){
-				elements = document.querySelectorAll(identity);
-				if(canBeIteration(elements)){
-					var model = new ChartModel(data, opt);
-					unRegistChart(identity);
-					registerChart(identity, model);
-					pan.drawChart(elements, model);
-				}
-			}
+		painterPrototype.drawChart = function(identity, data, opt){
+			var elements = document.querySelectorAll(identity);
+			var model = new RadarModule(AXIS_TYPE, StringUtil, Options.mix(opt), data);
+			register[identity] = model;
+			render.drawChart(elements, model);
+			interactiveProxy.interactive(true);
 			return elements;
 		};
-		
-		base.clearChart = function(identity){
-			var elements;
-			if(unRegistChart(identity)){
-				unRegistChart(identity);
-			}
-			if(isString(identity)){
-				elements = document.querySelectorAll(identity);
-				if(canBeIteration(elements)){					
-					pan.clearChart(elements);
-				}
-			}
-			return elements;
+
+		/* 上移一層
+		 * svg : HTML Element
+		 */
+		painterPrototype.nextArea = function(svg){
+			interactiveProxy.nextLayer(svg);
 		};
 		
-		base.destroyChart = function(){
+		/* 下移一層
+		 * svg : HTML Element
+		 */
+		painterPrototype.breakArea = function(svg){
+			interactiveProxy.backLayer(svg);
+		};
+		
+		/* 圖層插入最前頭 
+		 * display : HTML Element
+		 */
+		painterPrototype.insertFirst = function(display){
+			interactiveProxy.insertFirst(display);
+		};
+		
+		/* 圖層插入最後頭 
+		 * display : HTML Element
+		 */
+		painterPrototype.insertLast = function(display){
+			interactiveProxy.insertLast(display);
+		};
+		
+		/* 取得 全部 area 顏色*/
+		painterPrototype.getAllAreaColor = function(identity){
+			return register[identity].getAllAreaColor();
+		};
+		
+		/* 取得 area 顏色*/
+		painterPrototype.getAreaColor = function(identity, index){
+			return register[identity].getAreaColor(index);
 		};
 	};
 	
 	if(!window.RaderPainter){		
-		window.RaderPainter = new RaderPainter(d3, new ChartPan());
+		window.RaderPainter = new RaderPainter(d3);
 	}
 	
 	if(typeof(module)!= "undefined"){
-		module.exports = new RaderPainter(d3, new ChartPan());
+		module.exports = new RaderPainter(d3);
 	}
 }).call(this, document, d3, $);

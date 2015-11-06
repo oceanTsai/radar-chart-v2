@@ -17,8 +17,14 @@
 .radar .area {
     stroke-width: 2;
     fill-opacity: 0.5;
-    transition : all 1s
+    transition : all 1s;
 }
+
+.radar .area:hover{
+    fill-opacity: 0.9;
+};
+
+
 .radar .areaHover{
     fill-opacity: 0.8;
 }
@@ -47,7 +53,7 @@
 .radar .infoPanel-group{
 }
 .radar .infoPanel{
-    transition : all 1s ease-out;
+    
     stroke-width:1;             /**border size*/
     stroke:rgb(124,181,236);    /**border color*/
     fill:rgba(249,249,249,0.85);/**background*/
