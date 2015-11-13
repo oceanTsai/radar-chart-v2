@@ -355,7 +355,7 @@
 				thiz = null;
 			}
 			catch(e){
-				console.log('executed destroy method fail!')
+				console.log('executed destroy method fail!');
 				console.log(e);
 			}
 		};
@@ -450,7 +450,7 @@
 		 */
 		viewPrototype.drawArea = function(stage, model, options){
 			if(options.visibleArea){
-				var areaData = model.dataProvider() //or use stage.datum()
+				var areaData = model.dataProvider(); //or use stage.datum()
 				var container = stage.append('g').attr('class', 'area-box');
 				var areaPoints = [];
 				var markPoints = [];
@@ -738,7 +738,7 @@
 		/* 滑鼠點擊 area 的處理*/
 		interactivePrototype.areaMouseDown = function(){
 			insertLast($(this).parent()[0]);
-		},
+		};
 
 		/* 滑鼠滑入 mark時的處理 */
 		interactivePrototype.markMouseOver = function(data){
@@ -752,7 +752,7 @@
 				thiz.updatePanel(this, panel, text, textContent, data.model);
 				thiz.showPanel(panel, text);
 			}
-		},
+		};
 		/* 滑鼠滑出 mark 時的處理 */
 		interactivePrototype.markMouseOut = function(data){
 			var stage = findStage(this);
@@ -763,7 +763,7 @@
 				thiz.hidePanel(panel, text);
 				thiz.updatePanel(this, panel, text, '', data.model);
 			}
-		},
+		};
 		//enable or disable interactive.
 		interactivePrototype.interactive = function(enable){
 			//TO 事件移到事件模組
@@ -772,7 +772,7 @@
 				  .on('mouseover', this.markMouseOver)
 				  .on('mouseout' , this.markMouseOut);
 			}
-		}
+		};
 	};
 	
 	// --------------------------
@@ -780,7 +780,7 @@
 	//  Control
 	// -------------------------- 
 	var RaderPainter = function(d3){
-		var painterPrototype = RaderPainter.prototype
+		var painterPrototype = RaderPainter.prototype;
 		var register = {};
 		var render = new RenderView(window, document, $, d3);
 		var interactiveProxy = new InteractiveProxy(window, document, $, d3);
